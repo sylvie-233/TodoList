@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { showToast } from 'vant';
+import dayjs from 'dayjs';
 import { Priority } from '@todolist/shared';
 import type { CreateTaskDto, UpdateTaskDto, Task } from '@todolist/shared';
 import { useListStore } from '@/stores/list.js';
@@ -15,7 +16,7 @@ const tagStore = useTagStore();
 const allTags = computed(() => tagStore.tags);
 
 const form = reactive<CreateTaskDto & { tagIds: string[] }>({
-  title: '', description: '', listId: undefined, priority: Priority.NONE, dueDate: undefined, tagIds: [],
+  title: '', description: '', listId: undefined, priority: Priority.NONE, dueDate: dayjs().format('YYYY-MM-DD'), tagIds: [],
 });
 
 const selectedListName = computed(() => {
