@@ -1,0 +1,2 @@
+# Docker 构建专用 —— hoisted 模式确保 COPY node_modules 可用
+node-linker=hoisted

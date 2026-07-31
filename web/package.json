@@ -1,0 +1,29 @@
+{
+  "name": "todolist",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:server": "turbo dev --filter=@todolist/server",
+    "dev:client": "turbo dev --filter=@todolist/client",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "db:generate": "turbo db:generate",
+    "db:migrate": "turbo db:migrate",
+    "db:studio": "turbo db:studio",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.6.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  }
+}

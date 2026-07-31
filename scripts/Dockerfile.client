@@ -1,0 +1,32 @@
+# ============================================================
+# Stage 1: Build — 全部 web/ 一把 COPY，零维护
+# ============================================================
+FROM node:20-alpine AS builder
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+WORKDIR /app
+
+COPY web/ ./
+
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    mv .docker-npmrc .npmrc 2>/dev/null; \
+    pnpm install --filter=@todolist/client --frozen-lockfile && \
+    pnpm --filter @todolist/client build
+
+# ============================================================
+# Stage 2: Runner — nginx 托管 + 反向代理
+# ============================================================
+FROM nginx:alpine AS runner
+
+COPY scripts/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/client/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+    CMD wget -qO- http://localhost/ || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

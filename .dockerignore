@@ -1,0 +1,32 @@
+# Dependencies
+**/node_modules
+**/.pnpm-store
+
+# Build outputs
+**/dist
+**/.turbo
+
+# Git
+**/.git
+
+# Logs
+**/logs
+*.log
+
+# Environment (secrets)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# IDE
+.editorconfig
+.idea/
+*.swp
+
+# Docs
+*.md
+LICENSE
+
+# OS
+.DS_Store
+Thumbs.db
