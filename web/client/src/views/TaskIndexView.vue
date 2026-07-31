@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { showToast } from 'vant';
+import { showConfirmDialog, showToast } from 'vant';
 import { useTaskStore } from '@/stores/task.js';
 import { taskApi } from '@/api/index.js';
 import NavBar from '@/components/NavBar.vue';
@@ -9,6 +9,7 @@ import TaskForm from '@/components/TaskForm.vue';
 import TaskFilter from '@/components/TaskFilter.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import LoadingSkeleton from '@/components/LoadingSkeleton.vue';
+import ImageUploader from '@/components/ImageUploader.vue';
 import { useListStore } from '@/stores/list.js';
 import type { CreateTaskDto, UpdateTaskDto } from '@todolist/shared';
 
@@ -25,6 +26,7 @@ const listLoading = ref(false);
 const finished = ref(false);
 const showCreate = ref(false);
 const creating = ref(false);
+const createImages = ref<{ id?: string; url: string }[]>([]);
 const showFilter = ref(false);
 const isInitialLoading = ref(true);
 const customFilter = ref<Record<string, unknown>>({});
@@ -118,16 +120,26 @@ function handleToggle(id: string) {
   taskStore.toggleTask(id);
   showToast('状态已更新');
 }
-function handleDelete(id: string) {
-  taskStore.deleteTask(id);
-  showToast('已移入回收站');
+async function handleDelete(id: string) {
+  try {
+    await showConfirmDialog({
+      title: '删除任务',
+      message: '确定要移到回收站吗？',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    });
+    taskStore.deleteTask(id);
+    showToast('已移入回收站');
+  } catch { /* 用户取消 */ }
 }
 
 async function handleCreate(dto: CreateTaskDto | UpdateTaskDto) {
   creating.value = true;
   try {
-    await taskStore.createTask(dto as CreateTaskDto);
+    const payload = { ...(dto as CreateTaskDto), imageUrls: createImages.value.map((img) => img.url) };
+    await taskStore.createTask(payload);
     showToast('任务已创建');
+    createImages.value = [];
     showCreate.value = false;
   } finally { creating.value = false; }
 }
@@ -214,7 +226,16 @@ loadData();
         <span>新建任务</span>
         <van-icon name="cross" size="20" @click="showCreate = false" />
       </div>
-      <TaskForm :loading="creating" @submit="handleCreate" />
+      <TaskForm :loading="creating" @submit="handleCreate">
+        <template #extra>
+          <van-cell-group inset style="margin-top: 8px">
+            <div class="create-img-section">
+              <div class="create-img-label">图片</div>
+              <ImageUploader :images="createImages" @add="(url) => createImages.push({ url })" @delete="(id) => { const i = createImages.findIndex((img) => (img.id || img.url) === id); if (i >= 0) createImages.splice(i, 1); }" />
+            </div>
+          </van-cell-group>
+        </template>
+      </TaskForm>
     </van-popup>
   </div>
 </template>
@@ -253,4 +274,6 @@ loadData();
   background: var(--color-primary); color: white;
 }
 .ls-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.create-img-section { padding: 12px 16px; }
+.create-img-label { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-bottom: 6px; }
 </style>

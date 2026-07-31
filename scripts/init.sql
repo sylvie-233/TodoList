@@ -292,3 +292,22 @@ COMMENT ON COLUMN search_history.keyword     IS '搜索关键词';
 COMMENT ON COLUMN search_history.created_at  IS '搜索时间';
 
 CREATE INDEX idx_search_history_user ON search_history(user_id, created_at DESC);
+
+-- ============================================================
+-- 9. 任务图片表
+-- ============================================================
+
+CREATE TABLE task_image (
+    id              UUID            PRIMARY KEY DEFAULT uuid_generate_v4(),
+    task_id         UUID            NOT NULL REFERENCES task(id) ON DELETE CASCADE,
+    url             VARCHAR(500)    NOT NULL,
+    created_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE  task_image             IS '任务图片表，存储任务关联的图片 URL';
+COMMENT ON COLUMN task_image.id          IS '图片记录唯一标识（UUID）';
+COMMENT ON COLUMN task_image.task_id     IS '关联的任务（级联删除）';
+COMMENT ON COLUMN task_image.url         IS '图片访问 URL（相对路径）';
+COMMENT ON COLUMN task_image.created_at  IS '上传时间';
+
+CREATE INDEX idx_task_image_task ON task_image(task_id);

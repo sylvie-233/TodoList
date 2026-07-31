@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { showConfirmDialog, showToast } from 'vant';
 import { useTaskStore } from '@/stores/task.js';
-import { subTaskApi } from '@/api/index.js';
+import { subTaskApi, taskApi } from '@/api/index.js';
 import NavBar from '@/components/NavBar.vue';
 import PriorityBadge from '@/components/PriorityBadge.vue';
 import TagChip from '@/components/TagChip.vue';
@@ -13,13 +13,32 @@ const route = useRoute();
 const router = useRouter();
 const taskStore = useTaskStore();
 const showActions = ref(false);
+const taskImages = ref<{ id: string; url: string }[]>([]);
+const previewShow = ref(false);
+const previewIndex = ref(0);
+
+const previewUrls = computed(() => taskImages.value.map((img) => {
+  if (img.url.startsWith('http')) return img.url;
+  return window.location.origin + img.url;
+}));
+
+function previewImages(index = 0) {
+  previewIndex.value = index;
+  previewShow.value = true;
+}
 
 const actions = [
   { name: '复制任务', value: 'copy' },
   { name: '删除任务', value: 'delete' },
 ];
 
-onMounted(() => { taskStore.fetchTaskById(route.params.id as string); });
+onMounted(async () => {
+  const id = route.params.id as string;
+  taskStore.fetchTaskById(id);
+  try { taskImages.value = await taskApi.images(id); } catch { /* ignore */ }
+});
+
+// previewImages 已改用 computed + ImagePreview 组件
 
 function handleToggle() {
   if (!taskStore.currentTask) return;
@@ -131,6 +150,12 @@ async function handleSubReorder(id: string, direction: 'up' | 'down') {
           @reorder="handleSubReorder"
         />
       </div>
+      <div class="subtask-section" style="margin-top: 12px" v-if="taskImages.length">
+        <h3>图片 ({{ taskImages.length }})</h3>
+        <div class="img-row">
+          <img v-for="(img, i) in taskImages" :key="img.id" :src="img.url" class="img-thumb" @click="previewImages(i)" alt="" />
+        </div>
+      </div>
     </div>
 
     <div class="bottom-bar">
@@ -141,6 +166,13 @@ async function handleSubReorder(id: string, direction: 'up' | 'down') {
     </div>
 
     <van-action-sheet v-model:show="showActions" :actions="actions" @select="onActionSelect" />
+
+    <van-image-preview
+      v-model:show="previewShow"
+      :images="previewUrls"
+      :start-position="previewIndex"
+      :closeable="true"
+    />
   </div>
 </template>
 
@@ -155,5 +187,8 @@ async function handleSubReorder(id: string, direction: 'up' | 'down') {
 .tag-row { margin-top: 12px; }
 .subtask-section { background: var(--color-bg-card); }
 .subtask-section h3 { padding: 12px 16px; font-size: var(--font-size-md); font-weight: 600; }
+.img-row { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; }
+.img-row::-webkit-scrollbar { display: none; }
+.img-thumb { width: 72px; height: 72px; border-radius: 6px; object-fit: cover; cursor: pointer; flex-shrink: 0; }
 .bottom-bar { position: fixed; bottom: 50px; left: 0; right: 0; display: flex; gap: 12px; justify-content: center; padding: 8px 16px; background: var(--color-bg-card); border-top: 1px solid var(--color-border); }
 </style>

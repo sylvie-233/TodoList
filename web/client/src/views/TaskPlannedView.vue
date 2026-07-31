@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import dayjs from 'dayjs';
-import { showToast } from 'vant';
+import { showConfirmDialog, showToast } from 'vant';
 import { useTaskStore } from '@/stores/task.js';
 import { taskApi } from '@/api/index.js';
 import NavBar from '@/components/NavBar.vue';
@@ -46,7 +46,18 @@ async function loadData() {
 }
 
 function handleToggle(id: string) { taskStore.toggleTask(id); showToast('状态已更新'); }
-function handleDelete(id: string) { taskStore.deleteTask(id); showToast('已移入回收站'); }
+async function handleDelete(id: string) {
+  try {
+    await showConfirmDialog({
+      title: '删除任务',
+      message: '确定要移到回收站吗？',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    });
+    taskStore.deleteTask(id);
+    showToast('已移入回收站');
+  } catch { /* 用户取消 */ }
+}
 
 loadData();
 </script>

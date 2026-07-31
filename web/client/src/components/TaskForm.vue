@@ -82,6 +82,7 @@ onMounted(() => { listStore.fetchLists(); tagStore.fetchTags(); });
       <van-field :model-value="form.dueDate ?? ''" label="截止日期" is-link readonly placeholder="选择日期" @click="showDatePicker = true" />
       <van-field :model-value="selectedTagNames" label="标签" is-link readonly placeholder="选择标签" @click="showTagPicker = true" />
     </van-cell-group>
+    <slot name="extra" />
     <div style="margin: 16px">
       <van-button block type="primary" native-type="submit" :loading="loading">{{ isEdit ? '保存' : '创建' }}</van-button>
     </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { showConfirmDialog, showToast } from 'vant';
 import { useSearchStore } from '@/stores/search.js';
 import { useTaskStore } from '@/stores/task.js';
 import NavBar from '@/components/NavBar.vue';
@@ -28,7 +29,18 @@ function onInput() {
 }
 
 function handleToggle(id: string) { taskStore.toggleTask(id); }
-function handleDelete(id: string) { taskStore.deleteTask(id); }
+async function handleDelete(id: string) {
+  try {
+    await showConfirmDialog({
+      title: '删除任务',
+      message: '确定要移到回收站吗？',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    });
+    taskStore.deleteTask(id);
+    showToast('已移入回收站');
+  } catch { /* 用户取消 */ }
+}
 </script>
 
 <template>

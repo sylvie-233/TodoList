@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import dayjs from 'dayjs';
-import { showToast } from 'vant';
+import { showConfirmDialog, showToast } from 'vant';
 import { Calendar } from 'v-calendar';
 import 'v-calendar/style.css';
 import type { Task } from '@todolist/shared';
@@ -79,9 +79,17 @@ async function handleToggle(id: string) {
 }
 
 async function handleDelete(id: string) {
-  await taskApi.softDelete(id);
-  dayTasks.value = dayTasks.value.filter((t) => t.id !== id);
-  showToast('已移入回收站');
+  try {
+    await showConfirmDialog({
+      title: '删除任务',
+      message: '确定要移到回收站吗？',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    });
+    await taskApi.softDelete(id);
+    dayTasks.value = dayTasks.value.filter((t) => t.id !== id);
+    showToast('已移入回收站');
+  } catch { /* 用户取消 */ }
 }
 </script>
 

@@ -20,6 +20,7 @@
     "v-calendar": "^3.1.2",
     "vant": "^4.9.0",
     "vue": "^3.5.0",
+    "vue-advanced-cropper": "^2.8.9",
     "vue-echarts": "^8.0.1",
     "vue-router": "^4.4.0"
   },

@@ -7,8 +7,10 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AvatarCropper: typeof import('./src/components/AvatarCropper.vue')['default']
     ConfirmDialog: typeof import('./src/components/ConfirmDialog.vue')['default']
     EmptyState: typeof import('./src/components/EmptyState.vue')['default']
+    ImageUploader: typeof import('./src/components/ImageUploader.vue')['default']
     LoadingSkeleton: typeof import('./src/components/LoadingSkeleton.vue')['default']
     NavBar: typeof import('./src/components/NavBar.vue')['default']
     PriorityBadge: typeof import('./src/components/PriorityBadge.vue')['default']
@@ -32,6 +34,7 @@ declare module 'vue' {
     VanField: typeof import('vant/es')['Field']
     VanForm: typeof import('vant/es')['Form']
     VanIcon: typeof import('vant/es')['Icon']
+    VanImagePreview: typeof import('vant/es')['ImagePreview']
     VanList: typeof import('vant/es')['List']
     VanNavBar: typeof import('vant/es')['NavBar']
     VanPicker: typeof import('vant/es')['Picker']

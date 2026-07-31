@@ -119,4 +119,27 @@ export class TaskController {
   async getSubTasks(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.taskService.getSubTasks(user.id, id);
   }
+
+  @Get(':id/images')
+  async getImages(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.taskService.getImages(user.id, id);
+  }
+
+  @Post(':id/images')
+  async addImage(
+    @CurrentUser() user: JwtUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { url: string },
+  ) {
+    return this.taskService.addImage(user.id, id, body.url);
+  }
+
+  @Delete(':id/images/:imageId')
+  async deleteImage(
+    @CurrentUser() user: JwtUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('imageId', ParseUUIDPipe) imageId: string,
+  ) {
+    return this.taskService.deleteImage(user.id, id, imageId);
+  }
 }

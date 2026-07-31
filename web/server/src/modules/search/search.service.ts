@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, or, ilike, inArray, sql, desc } from 'drizzle-orm';
 import { DRIZZLE_DB } from '../../database/database.module.js';
 import type { DbClient } from '../../config/database.config.js';
-import { tasks, taskTags, searchHistories, priorityEnum } from '../../database/schema/index.js';
+import { tasks, taskTags, tags, lists, subTasks, searchHistories, priorityEnum } from '../../database/schema/index.js';
 import type { SearchQueryDto } from './dto/search-query.dto.js';
 
 const PAGE_SIZE = 20;
@@ -54,13 +54,16 @@ export class SearchService {
       .where(where);
 
     const total = countResult?.count ?? 0;
-    const data = await this.db
+    const rows = await this.db
       .select()
       .from(tasks)
       .where(where)
       .orderBy(desc(tasks.isPinned), desc(tasks.updatedAt))
       .limit(pageSize)
       .offset(offset);
+
+    // 批量加载关联数据
+    const data = await this.attachRelations(rows);
 
     // 保存搜索关键词到历史
     if (query.keyword && query.keyword.trim()) {
@@ -104,5 +107,44 @@ export class SearchService {
       .delete(searchHistories)
       .where(and(eq(searchHistories.id, id), eq(searchHistories.userId, userId)));
     return { message: 'History item deleted' };
+  }
+
+  /** 批量加载标签、清单和子任务计数 */
+  private async attachRelations(taskRows: Array<{ id: string; listId: string | null }>) {
+    const taskIds = taskRows.map((t) => t.id);
+    if (!taskIds.length) return [];
+
+    const listIds = [...new Set(taskRows.map((t) => t.listId).filter(Boolean))] as string[];
+
+    const [tagRelations, listRows, subtaskCounts] = await Promise.all([
+      this.db.select({ taskId: taskTags.taskId, tag: tags })
+        .from(taskTags).innerJoin(tags, eq(taskTags.tagId, tags.id))
+        .where(inArray(taskTags.taskId, taskIds)),
+      listIds.length > 0
+        ? this.db.select({ id: lists.id, name: lists.name, color: lists.color, icon: lists.icon })
+            .from(lists).where(inArray(lists.id, listIds))
+        : [],
+      this.db.select({
+        taskId: subTasks.taskId,
+        total: sql<number>`count(*)::int`,
+        completed: sql<number>`SUM(CASE WHEN ${subTasks.isCompleted} THEN 1 ELSE 0 END)::int`,
+      }).from(subTasks).where(inArray(subTasks.taskId, taskIds)).groupBy(subTasks.taskId),
+    ]);
+
+    const tagMap = new Map<string, Array<{ id: string; name: string; color: string }>>();
+    for (const { taskId, tag } of tagRelations) {
+      const arr = tagMap.get(taskId) || [];
+      arr.push({ id: tag.id, name: tag.name, color: tag.color ?? '#a855f7' });
+      tagMap.set(taskId, arr);
+    }
+    const listMap = new Map(listRows.map((l) => [l.id, { ...l, color: l.color ?? '#6366f1' }]));
+    const subtaskMap = new Map(subtaskCounts.map((s) => [s.taskId, { total: s.total, completed: s.completed }]));
+
+    return taskRows.map((t) => ({
+      ...t,
+      tags: tagMap.get(t.id) || [],
+      list: t.listId ? listMap.get(t.listId) ?? null : null,
+      subTaskCount: subtaskMap.get(t.id) ?? null,
+    }));
   }
 }

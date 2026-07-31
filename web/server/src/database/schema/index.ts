@@ -7,6 +7,7 @@ export { tags, tagsRelations } from './tags.js';
 export { taskTags, taskTagsRelations } from './task-tags.js';
 export { reminders, remindersRelations } from './reminders.js';
 export { searchHistories, searchHistoriesRelations } from './search-history.js';
+export { taskImages, taskImagesRelations } from './task-images.js';
 
 import * as allSchemas from './users.js';
 import * as lists from './lists.js';
@@ -16,6 +17,7 @@ import * as tags from './tags.js';
 import * as taskTags from './task-tags.js';
 import * as reminders from './reminders.js';
 import * as searchHistory from './search-history.js';
+import * as taskImages from './task-images.js';
 
 export const schema = {
   ...allSchemas,
@@ -26,6 +28,7 @@ export const schema = {
   ...taskTags,
   ...reminders,
   ...searchHistory,
+  ...taskImages,
 };
 
 // ---- 类型导出 ----

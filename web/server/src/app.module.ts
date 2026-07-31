@@ -20,6 +20,7 @@ import { ReminderModule } from './modules/reminder/reminder.module.js';
 import { StatisticsModule } from './modules/statistics/statistics.module.js';
 import { SearchModule } from './modules/search/search.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { UploadModule } from './modules/upload/upload.module.js';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { HealthModule } from './modules/health/health.module.js';
     StatisticsModule,
     SearchModule,
     HealthModule,
+    UploadModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

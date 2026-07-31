@@ -9,6 +9,7 @@ import {
   subTasks,
   reminders,
   lists,
+  taskImages,
   priorityEnum,
 } from '../../database/schema/index.js';
 import type { CreateTaskDto } from './dto/create-task.dto.js';
@@ -100,7 +101,7 @@ export class TaskService {
       .limit(pageSize)
       .offset(offset);
 
-    const data = await this.attachTags(rows);
+    const data = await this.attachTaskRelations(rows);
 
     return {
       data,
@@ -126,7 +127,7 @@ export class TaskService {
         ),
       )
       .orderBy(desc(tasks.isPinned), asc(tasks.dueDate), asc(tasks.priority));
-    return this.attachTags(rows);
+    return this.attachTaskRelations(rows);
   }
 
   async getPlanned(userId: string, page: number) {
@@ -154,7 +155,7 @@ export class TaskService {
       .limit(pageSize)
       .offset(offset);
 
-    const data = await this.attachTags(rows);
+    const data = await this.attachTaskRelations(rows);
     return { data, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }
 
@@ -182,7 +183,7 @@ export class TaskService {
       .limit(pageSize)
       .offset(offset);
 
-    const data = await this.attachTags(rows);
+    const data = await this.attachTaskRelations(rows);
     return { data, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }
 
@@ -206,7 +207,7 @@ export class TaskService {
       .limit(pageSize)
       .offset(offset);
 
-    const data = await this.attachTags(rows);
+    const data = await this.attachTaskRelations(rows);
 
     return { data, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }
@@ -269,6 +270,13 @@ export class TaskService {
     if (dto.tagIds && dto.tagIds.length > 0) {
       await this.db.insert(taskTags).values(
         dto.tagIds.map((tagId: string) => ({ taskId: task.id, tagId })),
+      );
+    }
+
+    // 绑定图片
+    if (dto.imageUrls && dto.imageUrls.length > 0) {
+      await this.db.insert(taskImages).values(
+        dto.imageUrls.map((url: string) => ({ taskId: task.id, url })),
       );
     }
 
@@ -438,10 +446,29 @@ export class TaskService {
       .orderBy(subTasks.sortOrder);
   }
 
+  // ---- 图片管理 ----
+
+  async getImages(userId: string, taskId: string) {
+    await this.ensureOwnership(userId, taskId);
+    return this.db.select().from(taskImages).where(eq(taskImages.taskId, taskId)).orderBy(taskImages.createdAt);
+  }
+
+  async addImage(userId: string, taskId: string, url: string) {
+    await this.ensureOwnership(userId, taskId);
+    const [img] = await this.db.insert(taskImages).values({ taskId, url }).returning();
+    return img;
+  }
+
+  async deleteImage(userId: string, taskId: string, imageId: string) {
+    await this.ensureOwnership(userId, taskId);
+    await this.db.delete(taskImages).where(eq(taskImages.id, imageId));
+    return { message: 'Image deleted' };
+  }
+
   // ---- 内部工具 ----
 
-  /** 批量加载标签、清单和子任务计数 */
-  private async attachTags(taskRows: Array<{ id: string; listId: string | null; [key: string]: unknown }>) {
+  /** 批量加载标签、清单、子任务计数 */
+  private async attachTaskRelations(taskRows: Array<{ id: string; listId: string | null; [key: string]: unknown }>) {
     const taskIds = taskRows.map((t) => t.id);
     const listIds = [...new Set(taskRows.map((t) => t.listId).filter(Boolean))] as string[];
 

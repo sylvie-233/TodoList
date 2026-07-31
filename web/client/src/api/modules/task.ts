@@ -29,4 +29,7 @@ export const taskApi = {
   batch: (dto: BatchTaskDto) => post('/tasks/batch', dto),
   bindTags: (id: string, dto: BindTagsDto) => post(`/tasks/${id}/tags`, dto),
   subTasks: (id: string) => get<SubTask[]>(`/tasks/${id}/sub-tasks`),
+  images: (id: string) => get<{ id: string; url: string }[]>(`/tasks/${id}/images`),
+  addImage: (id: string, url: string) => post<{ id: string; url: string }>(`/tasks/${id}/images`, { url }),
+  deleteImage: (taskId: string, imageId: string) => del(`/tasks/${taskId}/images/${imageId}`),
 };

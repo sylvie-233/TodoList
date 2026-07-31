@@ -30,4 +30,9 @@ export class CreateTaskDto {
   @IsArray()
   @IsUUID('4', { each: true })
   tagIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  imageUrls?: string[];
 }

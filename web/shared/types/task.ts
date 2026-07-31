@@ -32,6 +32,7 @@ export interface CreateTaskDto {
   dueDate?: string | null;
   dueTime?: string | null;
   tagIds?: string[];
+  imageUrls?: string[];
 }
 
 export interface UpdateTaskDto {
