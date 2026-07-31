@@ -139,3 +139,9 @@ docker compose -f scripts/docker-compose.yml up -d
 3. **DTO 即文档**：使用 `class-validator` 装饰器标注校验规则，同时作为 API 文档
 4. **Drizzle schema 即数据源**：数据库表结构以 `web/server/src/database/schema/` 为准
 5. **版本兼容**：Node.js ≥ 20，pnpm ≥ 9，PostgreSQL ≥ 15
+
+
+## Flutter App要求
+
+界面设计参考web/client实现
+UI库使用GetWidget

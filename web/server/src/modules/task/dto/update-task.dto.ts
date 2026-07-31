@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID, IsBoolean, IsInt, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsBoolean, IsInt, IsArray, MaxLength } from 'class-validator';
 
 export class UpdateTaskDto {
   @IsOptional()
@@ -41,4 +41,9 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsUUID('4', { each: true })
   tagIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  imageUrls?: string[];
 }

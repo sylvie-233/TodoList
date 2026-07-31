@@ -286,7 +286,7 @@ export class TaskService {
   async update(userId: string, taskId: string, dto: UpdateTaskDto) {
     await this.ensureOwnership(userId, taskId);
 
-    const { tagIds, ...rest } = dto;
+    const { tagIds, imageUrls, ...rest } = dto;
     const updateData: Record<string, unknown> = { ...rest, updatedAt: new Date() };
     if (dto.isCompleted === true) updateData.completedAt = new Date();
     if (dto.isCompleted === false) updateData.completedAt = null;
@@ -303,6 +303,16 @@ export class TaskService {
       if (tagIds.length > 0) {
         await this.db.insert(taskTags).values(
           tagIds.map((tagId: string) => ({ taskId, tagId })),
+        );
+      }
+    }
+
+    // 更新图片
+    if (imageUrls !== undefined) {
+      await this.db.delete(taskImages).where(eq(taskImages.taskId, taskId));
+      if (imageUrls.length > 0) {
+        await this.db.insert(taskImages).values(
+          imageUrls.map((url: string) => ({ taskId, url })),
         );
       }
     }
