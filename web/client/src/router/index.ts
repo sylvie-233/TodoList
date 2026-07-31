@@ -90,7 +90,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/statistics',
     name: 'Statistics',
-    component: () => import('@/views/StatisticsView.vue'),
+    component: () => import('@/views/StatisticsView.vue'), // ECharts 在此页面按需加载
     meta: { requiresAuth: true, title: '统计' },
   },
   {

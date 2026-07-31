@@ -29,6 +29,7 @@ async function onLoad() {
 
 async function handleRestore(id: string) {
   await taskStore.restoreTask(id);
+  await new Promise((r) => setTimeout(r, 250));
   showToast('任务已恢复');
 }
 
@@ -40,6 +41,7 @@ async function handlePermanent(id: string) {
     cancelButtonText: '取消',
   });
   await taskStore.permanentDeleteTask(id);
+  await new Promise((r) => setTimeout(r, 250));
   showToast('任务已永久删除');
 }
 

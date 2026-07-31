@@ -56,11 +56,6 @@ function onDateConfirm({ selectedValues }: { selectedValues: string[] }) {
   form.dueDate = selectedValues.join('-');
   showDatePicker.value = false;
 }
-function toggleTag(tagId: string) {
-  const idx = form.tagIds.indexOf(tagId);
-  if (idx >= 0) form.tagIds.splice(idx, 1);
-  else form.tagIds.push(tagId);
-}
 function handleSubmit() {
   if (!form.title.trim()) { showToast('请输入标题'); return; }
   emit('submit', { ...form });
@@ -104,7 +99,7 @@ onMounted(() => { listStore.fetchLists(); tagStore.fetchTags(); });
       <div style="padding: 16px">
         <van-checkbox-group v-model="form.tagIds">
           <van-cell-group>
-            <van-cell v-for="tag in allTags" :key="tag.id" :title="tag.name" clickable @click="toggleTag(tag.id)">
+            <van-cell v-for="tag in allTags" :key="tag.id" :title="tag.name" clickable>
               <template #right-icon><van-checkbox :name="tag.id" /></template>
             </van-cell>
           </van-cell-group>

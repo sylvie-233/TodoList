@@ -32,3 +32,18 @@ a {
   height: 100%;
   border-radius: 0;
 }
+
+/* Toast 确保可见 */
+.van-toast {
+  z-index: 10000 !important;
+}
+.van-toast,
+.van-toast__text {
+  background: rgba(0, 0, 0, 0.8) !important;
+  color: #fff !important;
+  font-size: 14px !important;
+}
+.van-toast--text {
+  padding: 12px 24px !important;
+  border-radius: 8px !important;
+}

@@ -37,4 +37,8 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsBoolean()
   isPinned?: boolean;
+
+  @IsOptional()
+  @IsUUID('4', { each: true })
+  tagIds?: string[];
 }

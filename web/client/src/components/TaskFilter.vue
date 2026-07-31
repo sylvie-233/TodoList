@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { reactive, computed } from 'vue';
+import { reactive, onMounted } from 'vue';
 import { Priority } from '@todolist/shared';
-import { useListStore } from '@/stores/list.js';
+import { useTagStore } from '@/stores/tag.js';
 
-const listStore = useListStore();
+const tagStore = useTagStore();
 
 const visible = defineModel<boolean>('visible', { default: false });
 
@@ -14,8 +14,8 @@ const emit = defineEmits<{
 const filter = reactive<{
   status?: string;
   priority?: string;
-  listId?: string;
-}>({});
+  tagId?: string;
+}>({ status: 'all' });
 
 const statusOptions = [
   { label: '全部', value: 'all' },
@@ -31,19 +31,21 @@ const priorityOptions = [
 ];
 
 function handleReset() {
-  filter.status = undefined;
+  filter.status = 'all';
   filter.priority = undefined;
-  filter.listId = undefined;
+  filter.tagId = undefined;
 }
 
 function handleApply() {
   const f: Record<string, unknown> = {};
   if (filter.status && filter.status !== 'all') f.status = filter.status;
   if (filter.priority) f.priority = filter.priority;
-  if (filter.listId) f.listId = filter.listId;
+  if (filter.tagId) f.tagId = filter.tagId;
   emit('apply', f);
   visible.value = false;
 }
+
+onMounted(() => tagStore.fetchTags());
 </script>
 
 <template>
@@ -85,19 +87,20 @@ function handleApply() {
         </div>
       </div>
 
-      <!-- 清单 -->
+      <!-- 标签 -->
       <div class="filter-group">
-        <div class="filter-label">清单</div>
-        <div class="filter-options">
+        <div class="filter-label">标签</div>
+        <div class="filter-options tag-scroll">
           <van-tag
-            v-for="l in listStore.lists"
-            :key="l.id"
-            :type="filter.listId === l.id ? 'primary' : 'default'"
-            size="large"
-            @click="filter.listId = filter.listId === l.id ? undefined : l.id"
+            v-for="t in tagStore.tags"
+            :key="t.id"
+            :type="filter.tagId === t.id ? 'primary' : 'default'"
+            size="medium"
+            @click="filter.tagId = filter.tagId === t.id ? undefined : t.id"
           >
-            {{ l.name }}
+            {{ t.name }}
           </van-tag>
+          <span v-if="tagStore.tags.length === 0" class="no-data">暂无标签</span>
         </div>
       </div>
 
@@ -111,33 +114,13 @@ function handleApply() {
 </template>
 
 <style scoped>
-.filter-body {
-  padding: 0 16px 24px;
-  max-height: 60vh;
-  overflow-y: auto;
-}
-.filter-group {
-  margin-top: 16px;
-}
-.filter-label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: 8px;
-}
-.filter-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.filter-options .van-tag {
-  cursor: pointer;
-}
-.filter-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 20px;
-}
-.filter-actions .van-button {
-  flex: 1;
-}
+.filter-body { padding: 0 16px 24px; max-height: 60vh; overflow-y: auto; }
+.filter-group { margin-top: 16px; }
+.filter-label { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-bottom: 8px; }
+.filter-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.filter-options .van-tag { cursor: pointer; }
+.tag-scroll { max-height: 120px; overflow-y: auto; padding: 2px; }
+.no-data { font-size: var(--font-size-xs); color: var(--color-text-hint); }
+.filter-actions { display: flex; gap: 12px; margin-top: 20px; }
+.filter-actions .van-button { flex: 1; }
 </style>

@@ -92,13 +92,15 @@ export class TaskService {
       .where(where);
 
     const total = countResult?.count ?? 0;
-    const data = await this.db
+    const rows = await this.db
       .select()
       .from(tasks)
       .where(where)
       .orderBy(orderBy)
       .limit(pageSize)
       .offset(offset);
+
+    const data = await this.attachTags(rows);
 
     return {
       data,
@@ -112,7 +114,7 @@ export class TaskService {
   // ---- 视图查询 ----
   async getToday(userId: string) {
     const today = new Date().toISOString().slice(0, 10);
-    return this.db
+    const rows = await this.db
       .select()
       .from(tasks)
       .where(
@@ -124,6 +126,7 @@ export class TaskService {
         ),
       )
       .orderBy(desc(tasks.isPinned), asc(tasks.dueDate), asc(tasks.priority));
+    return this.attachTags(rows);
   }
 
   async getPlanned(userId: string, page: number) {
@@ -143,7 +146,7 @@ export class TaskService {
       .where(where);
 
     const total = countResult?.count ?? 0;
-    const data = await this.db
+    const rows = await this.db
       .select()
       .from(tasks)
       .where(where)
@@ -151,6 +154,7 @@ export class TaskService {
       .limit(pageSize)
       .offset(offset);
 
+    const data = await this.attachTags(rows);
     return { data, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }
 
@@ -170,7 +174,7 @@ export class TaskService {
       .where(where);
 
     const total = countResult?.count ?? 0;
-    const data = await this.db
+    const rows = await this.db
       .select()
       .from(tasks)
       .where(where)
@@ -178,6 +182,7 @@ export class TaskService {
       .limit(pageSize)
       .offset(offset);
 
+    const data = await this.attachTags(rows);
     return { data, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }
 
@@ -193,13 +198,15 @@ export class TaskService {
       .where(where);
 
     const total = countResult?.count ?? 0;
-    const data = await this.db
+    const rows = await this.db
       .select()
       .from(tasks)
       .where(where)
       .orderBy(desc(tasks.deletedAt))
       .limit(pageSize)
       .offset(offset);
+
+    const data = await this.attachTags(rows);
 
     return { data, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }
@@ -271,8 +278,8 @@ export class TaskService {
   async update(userId: string, taskId: string, dto: UpdateTaskDto) {
     await this.ensureOwnership(userId, taskId);
 
-    const updateData: Record<string, unknown> = { ...dto, updatedAt: new Date() };
-    // 如果设置 isCompleted 则同步 completedAt
+    const { tagIds, ...rest } = dto;
+    const updateData: Record<string, unknown> = { ...rest, updatedAt: new Date() };
     if (dto.isCompleted === true) updateData.completedAt = new Date();
     if (dto.isCompleted === false) updateData.completedAt = null;
 
@@ -281,6 +288,17 @@ export class TaskService {
       .set(updateData)
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
       .returning();
+
+    // 更新标签绑定
+    if (tagIds !== undefined) {
+      await this.db.delete(taskTags).where(eq(taskTags.taskId, taskId));
+      if (tagIds.length > 0) {
+        await this.db.insert(taskTags).values(
+          tagIds.map((tagId: string) => ({ taskId, tagId })),
+        );
+      }
+    }
+
     return updated;
   }
 
@@ -421,6 +439,58 @@ export class TaskService {
   }
 
   // ---- 内部工具 ----
+
+  /** 批量加载标签、清单和子任务计数 */
+  private async attachTags(taskRows: Array<{ id: string; listId: string | null; [key: string]: unknown }>) {
+    const taskIds = taskRows.map((t) => t.id);
+    const listIds = [...new Set(taskRows.map((t) => t.listId).filter(Boolean))] as string[];
+
+    // 并行加载标签、清单、子任务计数
+    const [tagRelations, listRows, subtaskCounts] = await Promise.all([
+      taskIds.length > 0
+        ? this.db
+            .select({ taskId: taskTags.taskId, tag: tags })
+            .from(taskTags)
+            .innerJoin(tags, eq(taskTags.tagId, tags.id))
+            .where(inArray(taskTags.taskId, taskIds))
+        : [],
+      listIds.length > 0
+        ? this.db
+            .select({ id: lists.id, name: lists.name, color: lists.color, icon: lists.icon })
+            .from(lists)
+            .where(inArray(lists.id, listIds))
+        : [],
+      taskIds.length > 0
+        ? this.db
+            .select({
+              taskId: subTasks.taskId,
+              total: sql<number>`count(*)::int`,
+              completed: sql<number>`SUM(CASE WHEN ${subTasks.isCompleted} THEN 1 ELSE 0 END)::int`,
+            })
+            .from(subTasks)
+            .where(inArray(subTasks.taskId, taskIds))
+            .groupBy(subTasks.taskId)
+        : [],
+    ]);
+
+    const tagMap = new Map<string, Array<{ id: string; name: string; color: string }>>();
+    for (const { taskId, tag } of tagRelations) {
+      const arr = tagMap.get(taskId) || [];
+      arr.push({ id: tag.id, name: tag.name, color: tag.color ?? '#a855f7' });
+      tagMap.set(taskId, arr);
+    }
+
+    const listMap = new Map(listRows.map((l) => [l.id, { ...l, color: l.color ?? '#6366f1' }]));
+    const subtaskMap = new Map(subtaskCounts.map((s) => [s.taskId, { total: s.total, completed: s.completed }]));
+
+    return taskRows.map((t) => ({
+      ...t,
+      tags: tagMap.get(t.id) || [],
+      list: t.listId ? listMap.get(t.listId) ?? null : null,
+      subTaskCount: subtaskMap.get(t.id) ?? null,
+    }));
+  }
+
   private async ensureOwnership(userId: string, taskId: string) {
     const [task] = await this.db
       .select()

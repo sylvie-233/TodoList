@@ -13,26 +13,19 @@ import LoadingSkeleton from '@/components/LoadingSkeleton.vue';
 
 const today = dayjs().format('YYYY-MM-DD');
 const selectedDate = ref(new Date());
-const allTasks = ref<Task[]>([]);
-const loading = ref(true);
+const dayTasks = ref<Task[]>([]);
+const loading = ref(false);
 
-// 有任务的日期 → 圆点
-const taskAttributes = computed(() => {
-  const dateMap = new Map<string, Task[]>();
-  allTasks.value.forEach((t) => {
-    if (!t.dueDate) return;
-    const list = dateMap.get(t.dueDate) || [];
-    list.push(t);
-    dateMap.set(t.dueDate, list);
-  });
-  return Array.from(dateMap.entries()).map(([dateStr, tasks]) => ({
+// 有任务的日期 → 圆点（一次加载，用于标记）
+const taskDots = ref<Map<string, number>>(new Map());
+const taskAttributes = computed(() =>
+  Array.from(taskDots.value.entries()).map(([dateStr]) => ({
     key: dateStr,
     dates: [new Date(dateStr)],
-    dot: { color: tasks.every((t) => t.isCompleted) ? '#22c55e' : '#6366f1' },
-  }));
-});
+    dot: { color: '#6366f1' },
+  })),
+);
 
-// 选中日期 → 高亮
 const selectedAttr = computed(() => ({
   key: 'selected',
   highlight: { color: '#6366f1', fillMode: 'light' as const },
@@ -41,30 +34,53 @@ const selectedAttr = computed(() => ({
 
 const attributes = computed(() => [...taskAttributes.value, selectedAttr.value]);
 
-// 当天任务
-const dayTasks = computed(() =>
-  allTasks.value.filter((t) => t.dueDate === dayjs(selectedDate.value).format('YYYY-MM-DD')),
-);
+// 加载日历圆点标记
+async function loadDots() {
+  try {
+    const res = await taskApi.list({ pageSize: 500 } as never);
+    const map = new Map<string, number>();
+    res.data.forEach((t) => {
+      if (t.dueDate) map.set(t.dueDate, (map.get(t.dueDate) || 0) + 1);
+    });
+    taskDots.value = map;
+  } catch { /* ignore */ }
+}
 
-onMounted(async () => {
+// 选中日期后从后端拉取当天任务
+async function loadDayTasks() {
+  const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD');
   loading.value = true;
   try {
-    const res = await taskApi.list({ pageSize: 200 } as never);
-    allTasks.value = res.data;
-  } catch { /* ignore */ }
+    const res = await taskApi.list({
+      dateFrom: dateStr,
+      dateTo: dateStr,
+      pageSize: 100,
+    } as never);
+    dayTasks.value = res.data;
+  } catch { dayTasks.value = []; }
   loading.value = false;
+}
+
+onMounted(() => {
+  loadDots();
+  loadDayTasks();
 });
 
 function onDayClick(day: { id: string; date: Date }) {
   selectedDate.value = day.date;
+  loadDayTasks();
 }
 
-function handleToggle(id: string) {
-  const task = allTasks.value.find((t) => t.id === id);
-  if (task) { task.isCompleted = !task.isCompleted; showToast('状态已更新'); }
+async function handleToggle(id: string) {
+  const task = dayTasks.value.find((t) => t.id === id);
+  if (!task) return;
+  task.isCompleted = !task.isCompleted; // 乐观更新
+  try { await taskApi.toggle(id); } catch { task.isCompleted = !task.isCompleted; }
 }
-function handleDelete(id: string) {
-  allTasks.value = allTasks.value.filter((t) => t.id !== id);
+
+async function handleDelete(id: string) {
+  await taskApi.softDelete(id);
+  dayTasks.value = dayTasks.value.filter((t) => t.id !== id);
   showToast('已移入回收站');
 }
 </script>
@@ -72,16 +88,9 @@ function handleDelete(id: string) {
 <template>
   <div class="page">
     <NavBar title="日历" />
-
     <div class="calendar-wrapper">
-      <Calendar
-        :attributes="attributes"
-        borderless
-        title-position="left"
-        @dayclick="onDayClick"
-      />
+      <Calendar :attributes="attributes" borderless title-position="left" @dayclick="onDayClick" />
     </div>
-
     <div class="divider" />
     <div class="day-tasks">
       <LoadingSkeleton v-if="loading" />
@@ -100,29 +109,13 @@ function handleDelete(id: string) {
 <style scoped>
 .page { min-height: 100vh; background: var(--color-bg); padding-bottom: 50px; }
 .divider { height: 8px; background: var(--color-bg); }
-.section-hd {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 14px 16px 8px;
-}
-.hd-date {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  color: var(--color-text);
-}
-.hd-count {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-hint);
-}
+.section-hd { display: flex; align-items: baseline; gap: 8px; padding: 14px 16px 8px; }
+.hd-date { font-size: var(--font-size-lg); font-weight: 700; color: var(--color-text); }
+.hd-count { font-size: var(--font-size-xs); color: var(--color-text-hint); }
 </style>
 
 <style>
-.calendar-wrapper {
-  background: var(--color-bg-card);
-  padding: 12px 4px 8px;
-  margin: 0;
-}
+.calendar-wrapper { background: var(--color-bg-card); padding: 12px 4px 8px; margin: 0; }
 .calendar-wrapper .vc-container,
 .calendar-wrapper .vc-pane,
 .calendar-wrapper .vc-weeks { width: 100% !important; max-width: none !important; }

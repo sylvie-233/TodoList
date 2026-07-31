@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { subTaskApi } from '@/api/index.js';
-import type { SubTask, CreateSubTaskDto, UpdateSubTaskDto, ReorderSubTasksDto } from '@todolist/shared';
+import type { SubTask, CreateSubTaskDto, UpdateSubTaskDto } from '@todolist/shared';
 
 export const useSubTaskStore = defineStore('subTask', () => {
   const subTasks = ref<SubTask[]>([]);
@@ -31,8 +31,8 @@ export const useSubTaskStore = defineStore('subTask', () => {
     subTasks.value = subTasks.value.filter((s) => s.id !== id);
   }
 
-  async function reorderSubTasks(dto: ReorderSubTasksDto) {
-    await subTaskApi.reorder(dto);
+  async function reorderSubTasks(items: { id: string; sortOrder: number }[]) {
+    await subTaskApi.reorder(items);
   }
 
   function setSubTasks(list: SubTask[]) {

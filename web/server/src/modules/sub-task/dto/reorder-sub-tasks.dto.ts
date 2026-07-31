@@ -1,9 +1,8 @@
-import { IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IsUUID, IsInt } from 'class-validator';
+import { IsUUID, IsInt, IsArray, ValidateNested } from 'class-validator';
 
 class ReorderItem {
-  @IsUUID()
+  @IsUUID('4')
   id!: string;
 
   @IsInt()

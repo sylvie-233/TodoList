@@ -15,6 +15,17 @@ export class SubTaskController {
     return this.subTaskService.create(user.id, dto);
   }
 
+  // ⚠️ 固定路由（reorder, toggle）必须在 :id 动态路由之前注册
+  @Patch('reorder')
+  async reorder(@CurrentUser() _user: JwtUser, @Body() dto: ReorderSubTasksDto) {
+    return this.subTaskService.reorder(dto);
+  }
+
+  @Patch(':id/toggle')
+  async toggle(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.subTaskService.toggle(user.id, id);
+  }
+
   @Patch(':id')
   async update(
     @CurrentUser() user: JwtUser,
@@ -24,18 +35,8 @@ export class SubTaskController {
     return this.subTaskService.update(user.id, id, dto);
   }
 
-  @Patch(':id/toggle')
-  async toggle(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
-    return this.subTaskService.toggle(user.id, id);
-  }
-
   @Delete(':id')
   async remove(@CurrentUser() user: JwtUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.subTaskService.remove(user.id, id);
-  }
-
-  @Patch('reorder')
-  async reorder(@CurrentUser() _user: JwtUser, @Body() dto: ReorderSubTasksDto) {
-    return this.subTaskService.reorder(dto);
   }
 }

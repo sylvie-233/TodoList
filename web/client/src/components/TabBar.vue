@@ -5,12 +5,12 @@ import { useRoute } from 'vue-router';
 const route = useRoute();
 const active = ref('tasks');
 
-// 路由变化时同步 TabBar 高亮
 watch(
   () => route.path,
   (path) => {
     if (path.startsWith('/tasks')) active.value = 'tasks';
     else if (path.startsWith('/calendar')) active.value = 'calendar';
+    else if (path.startsWith('/lists')) active.value = 'lists';
     else if (path.startsWith('/statistics')) active.value = 'statistics';
     else if (path.startsWith('/settings')) active.value = 'settings';
   },

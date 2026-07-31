@@ -1,15 +1,50 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import VChart from 'vue-echarts';
+import { use } from 'echarts/core';
+import { BarChart, LineChart } from 'echarts/charts';
+import { GridComponent, TooltipComponent } from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
 import { useStatisticsStore } from '@/stores/statistics.js';
 import NavBar from '@/components/NavBar.vue';
 import EmptyState from '@/components/EmptyState.vue';
 
+use([BarChart, LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
+
 const statsStore = useStatisticsStore();
 const days = ref(7);
 
-onMounted(() => {
-  loadData();
+const chartOption = computed(() => {
+  const isBar = days.value === 7;
+  return {
+    tooltip: { trigger: 'axis' as const },
+    grid: { left: 0, right: 10, top: 10, bottom: 20 },
+    xAxis: {
+      type: 'category' as const,
+      data: statsStore.trends.map((d) => d.date.slice(5)),
+      axisLabel: { fontSize: 10, color: '#999' },
+      axisLine: { lineStyle: { color: '#eee' } },
+    },
+    yAxis: {
+      type: 'value' as const,
+      minInterval: 1,
+      axisLabel: { fontSize: 10, color: '#999' },
+      splitLine: { lineStyle: { color: '#f5f5f5' } },
+    },
+    series: [{
+      type: isBar ? 'bar' : 'line',
+      data: statsStore.trends.map((d) => d.completed),
+      itemStyle: { color: '#6366f1' },
+      barMaxWidth: 16,
+      smooth: !isBar,
+      symbol: isBar ? 'none' : 'circle',
+      symbolSize: 4,
+      lineStyle: { width: 2 },
+    }],
+  };
 });
+
+onMounted(() => loadData());
 
 async function loadData() {
   await Promise.all([
@@ -22,12 +57,6 @@ async function loadData() {
 async function switchDays(n: number) {
   days.value = n;
   await statsStore.fetchTrends(n);
-}
-
-function getBarHeight(count: number): string {
-  const values = statsStore.trends.map((d) => d.completed);
-  const max = Math.max(...values, 1);
-  return `${Math.max((count / max) * 80, 4)}px`;
 }
 </script>
 
@@ -54,6 +83,7 @@ function getBarHeight(count: number): string {
           <span class="kpi-label">已逾期</span>
         </div>
       </div>
+
       <!-- 趋势图 -->
       <div class="section">
         <h3 class="section-title">
@@ -63,16 +93,12 @@ function getBarHeight(count: number): string {
             <van-button size="mini" :type="days === 30 ? 'primary' : 'default'" @click="switchDays(30)">30天</van-button>
           </span>
         </h3>
-        <div class="trend-bars" v-if="statsStore.trends.length">
-          <div v-for="d in statsStore.trends" :key="d.date" class="bar-col">
-            <div class="bar" :style="{ height: getBarHeight(d.completed) }">
-              <span class="bar-tip" v-if="d.completed > 0">{{ d.completed }}</span>
-            </div>
-            <span class="bar-label">{{ d.date.slice(5) }}</span>
-          </div>
+        <div v-if="statsStore.trends.length" style="height: 160px">
+          <v-chart :option="chartOption" autoresize />
         </div>
         <EmptyState v-else title="暂无趋势数据" />
       </div>
+
       <!-- 逾期任务 -->
       <div class="section" v-if="statsStore.overdue && statsStore.overdue.items.length">
         <h3 class="section-title">逾期任务 ({{ statsStore.overdue.total }})</h3>
@@ -82,7 +108,6 @@ function getBarHeight(count: number): string {
         </div>
       </div>
     </div>
-    
   </div>
 </template>
 
@@ -98,14 +123,6 @@ function getBarHeight(count: number): string {
 .kpi-label { font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-top: 4px; display: block; }
 .section { background: var(--color-bg-card); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px; }
 .section-title { font-size: var(--font-size-sm); font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; }
-.trend-bars { display: flex; gap: 3px; align-items: flex-end; height: 100px; }
-.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
-.bar {
-  width: 100%; max-width: 20px; background: var(--color-primary-light);
-  border-radius: 4px 4px 0 0; min-height: 4px; position: relative;
-}
-.bar-tip { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 9px; color: var(--color-text-secondary); }
-.bar-label { font-size: 9px; color: var(--color-text-hint); margin-top: 3px; }
 .overdue-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--color-border); font-size: var(--font-size-sm); }
 .overdue-days { color: var(--color-danger); font-size: var(--font-size-xs); white-space: nowrap; }
 .overdue-title { flex: 1; margin-right: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

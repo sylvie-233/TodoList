@@ -19,6 +19,7 @@ export interface Task {
   /** 关联数据 —— 仅在详情接口返回 */
   tags?: TagInfo[];
   subTasks?: SubTaskInfo[];
+  subTaskCount?: { total: number; completed: number } | null;
   reminders?: ReminderInfo[];
   list?: ListInfo;
 }

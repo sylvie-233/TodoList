@@ -14,6 +14,7 @@ onMounted(() => listStore.fetchLists());
 async function handleCreate() {
   if (!newName.value.trim()) return;
   await listStore.createList({ name: newName.value.trim() });
+  await new Promise((r) => setTimeout(r, 300));
   showToast('清单已创建');
   newName.value = '';
 }
@@ -26,13 +27,14 @@ async function handleDelete(id: string) {
     cancelButtonText: '取消',
   });
   await listStore.deleteList(id);
+  await new Promise((r) => setTimeout(r, 300));
   showToast('清单已删除');
 }
 </script>
 
 <template>
   <div class="page">
-    <NavBar title="清单管理" />
+    <NavBar title="清单管理" show-back />
     <div class="content">
       <van-cell-group inset v-if="listStore.lists.length">
         <van-swipe-cell v-for="list in listStore.lists" :key="list.id">

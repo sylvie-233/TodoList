@@ -23,6 +23,7 @@ async function handleSave() {
   } else {
     await tagStore.createTag({ name: tagName.value.trim(), color: tagColor.value });
   }
+  await new Promise((r) => setTimeout(r, 300));
   showToast(editingTag.value ? '标签已更新' : '标签已创建');
   tagName.value = '';
   tagColor.value = '#a855f7';
@@ -105,6 +106,6 @@ async function handleDelete(id: string) {
 .tag-dot { width: 10px; height: 10px; border-radius: 50%; }
 .tag-name { font-weight: 500; min-width: 20px; }
 .color-row { display: flex; gap: 10px; padding: 12px 16px; justify-content: center; }
-.color-dot { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: transform 0.2s; }
+.color-dot { display: inline-block; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: transform 0.2s; vertical-align: middle; }
 .color-dot.active { border-color: var(--color-text); transform: scale(1.15); }
 </style>

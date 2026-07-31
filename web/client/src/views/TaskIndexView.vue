@@ -9,14 +9,16 @@ import TaskForm from '@/components/TaskForm.vue';
 import TaskFilter from '@/components/TaskFilter.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import LoadingSkeleton from '@/components/LoadingSkeleton.vue';
+import { useListStore } from '@/stores/list.js';
 import type { CreateTaskDto, UpdateTaskDto } from '@todolist/shared';
 
 const taskStore = useTaskStore();
-const activeTab = ref('all');
+const listStore = useListStore();
+const activeTab = ref('today');
 const tabTransition = ref('slide-left');
 
 const tabOrder: Record<string, number> = {
-  all: 0, today: 1, planned: 2, completed: 3,
+  today: 0, planned: 1, lists: 2,
 };
 const refreshing = ref(false);
 const listLoading = ref(false);
@@ -26,15 +28,15 @@ const creating = ref(false);
 const showFilter = ref(false);
 const isInitialLoading = ref(true);
 const customFilter = ref<Record<string, unknown>>({});
+const selectedListId = ref('');
 
 const hasActiveFilter = computed(() => Object.keys(customFilter.value).length > 0);
 
 function getFilter(): Record<string, unknown> {
   const base = { ...customFilter.value };
-  switch (activeTab.value) {
-    case 'completed': base.status = 'completed'; break;
-    default: if (!base.status) base.status = 'active'; break;
-  }
+  if (activeTab.value === 'lists' && selectedListId.value) base.listId = selectedListId.value;
+  // 今天 / 计划 tab 默认只看未完成的；清单 tab 不设限制，全部显示
+  if (!base.status && activeTab.value !== 'lists') base.status = 'active';
   return base;
 }
 
@@ -52,7 +54,7 @@ async function loadData() {
     } else {
       await taskStore.fetchTasks(getFilter());
     }
-    finished.value = taskStore.tasks.length >= taskStore.total && taskStore.total > 0;
+    finished.value = taskStore.total === 0 || taskStore.tasks.length >= taskStore.total;
   } finally {
     isInitialLoading.value = false;
   }
@@ -60,7 +62,7 @@ async function loadData() {
 
 function onLoad() {
   taskStore.loadMore().then(() => {
-    if (taskStore.tasks.length >= taskStore.total) finished.value = true;
+    finished.value = taskStore.tasks.length >= taskStore.total;
     listLoading.value = false;
   }).catch(() => { listLoading.value = false; });
 }
@@ -69,10 +71,9 @@ async function onRefresh() {
   taskStore.resetPage();
   await loadData();
   refreshing.value = false;
-  finished.value = taskStore.tasks.length >= taskStore.total;
 }
 
-const previousTab = ref('all');
+const previousTab = ref('today');
 
 function onTabChange(name: string) {
   const fromIdx = tabOrder[previousTab.value] ?? 0;
@@ -85,6 +86,19 @@ function onTabChange(name: string) {
   taskStore.total = 0;
   finished.value = false;
   loadData();
+}
+
+function selectList(id: string) {
+  selectedListId.value = id;
+  taskStore.resetPage();
+  taskStore.tasks = [];
+  isInitialLoading.value = true;
+  const filter: Record<string, unknown> = {};
+  if (id) filter.listId = id;
+  taskStore.fetchTasks(filter).finally(() => {
+    finished.value = taskStore.total === 0 || taskStore.tasks.length >= taskStore.total;
+    isInitialLoading.value = false;
+  });
 }
 
 function onFilterApply(filter: Record<string, unknown>) {
@@ -118,6 +132,7 @@ async function handleCreate(dto: CreateTaskDto | UpdateTaskDto) {
   } finally { creating.value = false; }
 }
 
+listStore.fetchLists();
 loadData();
 </script>
 
@@ -125,18 +140,34 @@ loadData();
   <div class="page">
     <NavBar title="任务">
       <template #right>
-        <van-icon name="filter-o" size="20" @click="showFilter = true" style="margin-right: 12px" />
+        <van-icon v-if="activeTab === 'lists'" name="filter-o" size="20" @click="showFilter = true" style="margin-right: 12px" />
         <van-icon name="search" size="20" @click="$router.push('/search')" />
       </template>
     </NavBar>
     <van-tabs v-model:active="activeTab" sticky @change="onTabChange">
-      <van-tab title="全部" name="all" />
       <van-tab title="今天" name="today" />
       <van-tab title="计划" name="planned" />
-      <van-tab title="已完成" name="completed" />
+      <van-tab title="清单" name="lists" />
     </van-tabs>
 
-    <div v-if="hasActiveFilter" class="active-filter-bar">
+    <!-- 清单选择器（仅清单 Tab 显示）-->
+    <div v-if="activeTab === 'lists'" class="list-selector">
+      <span
+        class="ls-item" :class="{ active: !selectedListId }"
+        @click="selectList('')"
+      >全部</span>
+      <span
+        v-for="l in listStore.lists" :key="l.id"
+        class="ls-item" :class="{ active: selectedListId === l.id }"
+        :style="selectedListId === l.id ? { background: l.color, color: '#fff', borderColor: l.color } : {}"
+        @click="selectList(l.id)"
+      >
+        <span class="ls-dot" :style="{ background: l.color }" />
+        {{ l.name }}
+      </span>
+    </div>
+
+    <div v-if="hasActiveFilter && activeTab === 'lists'" class="active-filter-bar">
       <span>已应用筛选</span>
       <van-button size="mini" plain type="primary" @click="clearFilter">清除</van-button>
     </div>
@@ -202,4 +233,24 @@ loadData();
   display: flex; justify-content: space-between; align-items: center;
   padding: 16px; font-size: var(--font-size-lg); font-weight: 600;
 }
+/* 清单选择器 */
+.list-selector {
+  display: flex; gap: 6px; padding: 8px 12px;
+  overflow-x: auto; white-space: nowrap;
+  background: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
+}
+.list-selector::-webkit-scrollbar { display: none; }
+.ls-item {
+  flex-shrink: 0; padding: 5px 12px;
+  border-radius: 14px; font-size: var(--font-size-sm);
+  background: var(--color-bg); color: var(--color-text-secondary);
+  border: 1px solid transparent; cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+  transition: all 0.2s;
+}
+.ls-item.active {
+  background: var(--color-primary); color: white;
+}
+.ls-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 </style>
