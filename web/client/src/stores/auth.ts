@@ -39,7 +39,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     clearTokens();
-    window.location.href = '/login';
+    setTimeout(() => { window.location.href = '/login'; }, 500);
   }
 
   return { user, accessToken, refreshToken, isAuthenticated, login, register, logout, clearTokens, saveTokens };

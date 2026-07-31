@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { showToast } from 'vant';
+import { showConfirmDialog, showToast } from 'vant';
 import { useAuthStore } from '@/stores/auth.js';
 import { userApi } from '@/api/index.js';
 import NavBar from '@/components/NavBar.vue';
@@ -29,7 +29,18 @@ async function handleChangePassword() {
   } catch { showToast('修改失败，请检查旧密码是否正确'); }
 }
 
-function handleLogout() { authStore.logout(); }
+async function handleLogout() {
+  try {
+    await showConfirmDialog({
+      title: '退出登录',
+      message: '确定要退出当前账号吗？',
+      confirmButtonText: '退出',
+      cancelButtonText: '取消',
+    });
+    showToast('已退出登录');
+    authStore.logout();
+  } catch { /* 用户取消 */ }
+}
 
 const featureLinks = [
   { title: '清单管理', icon: 'bars', to: '/lists' },

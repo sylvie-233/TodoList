@@ -74,7 +74,8 @@ function onDayClick(day: { id: string; date: Date }) {
 async function handleToggle(id: string) {
   const task = dayTasks.value.find((t) => t.id === id);
   if (!task) return;
-  task.isCompleted = !task.isCompleted; // 乐观更新
+  task.isCompleted = !task.isCompleted;
+  showToast('状态已更新');
   try { await taskApi.toggle(id); } catch { task.isCompleted = !task.isCompleted; }
 }
 
