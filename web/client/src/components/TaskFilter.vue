@@ -1,3 +1,51 @@
+<script setup lang="ts">
+import { reactive, computed } from 'vue';
+import { Priority } from '@todolist/shared';
+import { useListStore } from '@/stores/list.js';
+
+const listStore = useListStore();
+
+const visible = defineModel<boolean>('visible', { default: false });
+
+const emit = defineEmits<{
+  apply: [filter: Record<string, unknown>];
+}>();
+
+const filter = reactive<{
+  status?: string;
+  priority?: string;
+  listId?: string;
+}>({});
+
+const statusOptions = [
+  { label: '全部', value: 'all' },
+  { label: '未完成', value: 'active' },
+  { label: '已完成', value: 'completed' },
+];
+
+const priorityOptions = [
+  { label: '紧急', value: Priority.URGENT },
+  { label: '高', value: Priority.HIGH },
+  { label: '中', value: Priority.MEDIUM },
+  { label: '低', value: Priority.LOW },
+];
+
+function handleReset() {
+  filter.status = undefined;
+  filter.priority = undefined;
+  filter.listId = undefined;
+}
+
+function handleApply() {
+  const f: Record<string, unknown> = {};
+  if (filter.status && filter.status !== 'all') f.status = filter.status;
+  if (filter.priority) f.priority = filter.priority;
+  if (filter.listId) f.listId = filter.listId;
+  emit('apply', f);
+  visible.value = false;
+}
+</script>
+
 <template>
   <van-action-sheet
     v-model:show="visible"
@@ -61,54 +109,6 @@
     </div>
   </van-action-sheet>
 </template>
-
-<script setup lang="ts">
-import { reactive, computed } from 'vue';
-import { Priority } from '@todolist/shared';
-import { useListStore } from '@/stores/list.js';
-
-const listStore = useListStore();
-
-const visible = defineModel<boolean>('visible', { default: false });
-
-const emit = defineEmits<{
-  apply: [filter: Record<string, unknown>];
-}>();
-
-const filter = reactive<{
-  status?: string;
-  priority?: string;
-  listId?: string;
-}>({});
-
-const statusOptions = [
-  { label: '全部', value: 'all' },
-  { label: '未完成', value: 'active' },
-  { label: '已完成', value: 'completed' },
-];
-
-const priorityOptions = [
-  { label: '紧急', value: Priority.URGENT },
-  { label: '高', value: Priority.HIGH },
-  { label: '中', value: Priority.MEDIUM },
-  { label: '低', value: Priority.LOW },
-];
-
-function handleReset() {
-  filter.status = undefined;
-  filter.priority = undefined;
-  filter.listId = undefined;
-}
-
-function handleApply() {
-  const f: Record<string, unknown> = {};
-  if (filter.status && filter.status !== 'all') f.status = filter.status;
-  if (filter.priority) f.priority = filter.priority;
-  if (filter.listId) f.listId = filter.listId;
-  emit('apply', f);
-  visible.value = false;
-}
-</script>
 
 <style scoped>
 .filter-body {

@@ -1,3 +1,10 @@
+<script setup lang="ts">
+withDefaults(defineProps<{ count?: number; rows?: number }>(), {
+  count: 5,
+  rows: 2,
+});
+</script>
+
 <template>
   <div class="skeleton-list">
     <div v-for="i in count" :key="i" class="skeleton-card">
@@ -5,13 +12,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-withDefaults(defineProps<{ count?: number; rows?: number }>(), {
-  count: 5,
-  rows: 2,
-});
-</script>
 
 <style scoped>
 .skeleton-list {

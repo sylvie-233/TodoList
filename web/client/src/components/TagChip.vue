@@ -1,12 +1,12 @@
+<script setup lang="ts">
+defineProps<{ name: string; color: string; small?: boolean }>();
+</script>
+
 <template>
   <span class="tag-chip" :class="{ small }" :style="{ background: color + '20', color, borderColor: color }">
     {{ name }}
   </span>
 </template>
-
-<script setup lang="ts">
-defineProps<{ name: string; color: string; small?: boolean }>();
-</script>
 
 <style scoped>
 .tag-chip {

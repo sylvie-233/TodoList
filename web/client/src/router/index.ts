@@ -110,7 +110,8 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('accessToken');
   if (to.meta.requiresAuth !== false && !token) {
-    next('/login');
+    // 记住目标地址，登录后跳回
+    next({ path: '/login', query: { redirect: to.fullPath } });
   } else if ((to.path === '/login' || to.path === '/register') && token) {
     next('/tasks');
   } else {

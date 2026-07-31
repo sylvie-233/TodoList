@@ -130,6 +130,7 @@ docker compose -f scripts/docker-compose.yml up -d
 - API 路由统一前缀 `/api/v1/`
 - 数据库操作统一走 Drizzle，特殊情况可以手写 SQL
 - 前后端共享类型定义放在 `web/shared/types/`，两边通过 workspace 引用
+- Vue文件中script代码块在上
 
 ## 关键约定
 

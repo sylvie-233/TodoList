@@ -1,6 +1,56 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { showConfirmDialog, showToast } from 'vant';
+import { useTagStore } from '@/stores/tag.js';
+import type { Tag } from '@todolist/shared';
+import NavBar from '@/components/NavBar.vue';
+import EmptyState from '@/components/EmptyState.vue';
+
+const tagStore = useTagStore();
+const showCreate = ref(false);
+const tagName = ref('');
+const tagColor = ref('#a855f7');
+const editingTag = ref<Tag | null>(null);
+
+const presetColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#78716c'];
+
+onMounted(() => tagStore.fetchTags());
+
+async function handleSave() {
+  if (!tagName.value.trim()) return;
+  if (editingTag.value) {
+    await tagStore.updateTag(editingTag.value.id, { name: tagName.value.trim(), color: tagColor.value });
+  } else {
+    await tagStore.createTag({ name: tagName.value.trim(), color: tagColor.value });
+  }
+  showToast(editingTag.value ? '标签已更新' : '标签已创建');
+  tagName.value = '';
+  tagColor.value = '#a855f7';
+  editingTag.value = null;
+}
+
+function handleEdit(tag: Tag) {
+  editingTag.value = tag;
+  tagName.value = tag.name;
+  tagColor.value = tag.color;
+  showCreate.value = true;
+}
+
+async function handleDelete(id: string) {
+  await showConfirmDialog({
+    title: '删除标签',
+    message: '所有任务上的此标签将被移除',
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+  });
+  await tagStore.deleteTag(id);
+  showToast('标签已删除');
+}
+</script>
+
 <template>
   <div class="page">
-    <NavBar title="标签管理" />
+    <NavBar title="标签管理" show-back />
     <div class="content">
       <div class="tag-grid">
         <div
@@ -38,58 +88,9 @@
         />
       </div>
     </van-dialog>
-    <TabBar />
+    
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { showConfirmDialog } from 'vant';
-import { useTagStore } from '@/stores/tag.js';
-import type { Tag } from '@todolist/shared';
-import NavBar from '@/components/NavBar.vue';
-import TabBar from '@/components/TabBar.vue';
-import EmptyState from '@/components/EmptyState.vue';
-
-const tagStore = useTagStore();
-const showCreate = ref(false);
-const tagName = ref('');
-const tagColor = ref('#a855f7');
-const editingTag = ref<Tag | null>(null);
-
-const presetColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#78716c'];
-
-onMounted(() => tagStore.fetchTags());
-
-async function handleSave() {
-  if (!tagName.value.trim()) return;
-  if (editingTag.value) {
-    await tagStore.updateTag(editingTag.value.id, { name: tagName.value.trim(), color: tagColor.value });
-  } else {
-    await tagStore.createTag({ name: tagName.value.trim(), color: tagColor.value });
-  }
-  tagName.value = '';
-  tagColor.value = '#a855f7';
-  editingTag.value = null;
-}
-
-function handleEdit(tag: Tag) {
-  editingTag.value = tag;
-  tagName.value = tag.name;
-  tagColor.value = tag.color;
-  showCreate.value = true;
-}
-
-async function handleDelete(id: string) {
-  await showConfirmDialog({
-    title: '删除标签',
-    message: '所有任务上的此标签将被移除',
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-  });
-  await tagStore.deleteTag(id);
-}
-</script>
 
 <style scoped>
 .page { min-height: 100vh; background: var(--color-bg); padding-bottom: 50px; }

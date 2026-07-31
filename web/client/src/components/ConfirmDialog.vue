@@ -1,16 +1,3 @@
-<template>
-  <van-dialog
-    v-model:show="show"
-    :title="title"
-    :message="message"
-    :confirm-button-text="confirmText"
-    :cancel-button-text="cancelText"
-    :show-cancel-button="showCancel"
-    @confirm="handleConfirm"
-    @cancel="handleCancel"
-  />
-</template>
-
 <script setup lang="ts">
 import { ref } from 'vue';
 
@@ -52,3 +39,16 @@ function handleCancel() {
 
 defineExpose({ open });
 </script>
+
+<template>
+  <van-dialog
+    v-model:show="show"
+    :title="title"
+    :message="message"
+    :confirm-button-text="confirmText"
+    :cancel-button-text="cancelText"
+    :show-cancel-button="showCancel"
+    @confirm="handleConfirm"
+    @cancel="handleCancel"
+  />
+</template>

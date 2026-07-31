@@ -1,22 +1,9 @@
-<template>
-  <div class="page">
-    <NavBar title="已完成" />
-    <div class="content">
-      <van-list v-model:loading="loading" :finished="finished" finished-text="没有更多了" @load="onLoad">
-        <TaskCard v-for="task in taskStore.tasks" :key="task.id" :task="task" @toggle="handleToggle" @delete="handleDelete" />
-      </van-list>
-      <EmptyState v-if="!loading && taskStore.tasks.length === 0" title="暂无已完成任务" />
-    </div>
-    <TabBar />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref } from 'vue';
+import { showToast } from 'vant';
 import { useTaskStore } from '@/stores/task.js';
 import { taskApi } from '@/api/index.js';
 import NavBar from '@/components/NavBar.vue';
-import TabBar from '@/components/TabBar.vue';
 import TaskCard from '@/components/TaskCard.vue';
 import EmptyState from '@/components/EmptyState.vue';
 
@@ -40,13 +27,26 @@ async function onLoad() {
   }
 }
 
-function handleToggle(id: string) { taskStore.toggleTask(id); }
-function handleDelete(id: string) { taskStore.deleteTask(id); }
+function handleToggle(id: string) { taskStore.toggleTask(id); showToast('状态已更新'); }
+function handleDelete(id: string) { taskStore.deleteTask(id); showToast('已移入回收站'); }
 
 page = 1;
 taskStore.tasks = [];
 onLoad();
 </script>
+
+<template>
+  <div class="page">
+    <NavBar title="已完成" show-back />
+    <div class="content">
+      <van-list v-model:loading="loading" :finished="finished" finished-text="没有更多了" @load="onLoad">
+        <TaskCard v-for="task in taskStore.tasks" :key="task.id" :task="task" @toggle="handleToggle" @delete="handleDelete" />
+      </van-list>
+      <EmptyState v-if="!loading && taskStore.tasks.length === 0" title="暂无已完成任务" />
+    </div>
+    
+  </div>
+</template>
 
 <style scoped>
 .page { min-height: 100vh; background: var(--color-bg); padding-bottom: 50px; }

@@ -1,3 +1,36 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useStatisticsStore } from '@/stores/statistics.js';
+import NavBar from '@/components/NavBar.vue';
+import EmptyState from '@/components/EmptyState.vue';
+
+const statsStore = useStatisticsStore();
+const days = ref(7);
+
+onMounted(() => {
+  loadData();
+});
+
+async function loadData() {
+  await Promise.all([
+    statsStore.fetchDashboard(),
+    statsStore.fetchTrends(days.value),
+    statsStore.fetchOverdue(),
+  ]);
+}
+
+async function switchDays(n: number) {
+  days.value = n;
+  await statsStore.fetchTrends(n);
+}
+
+function getBarHeight(count: number): string {
+  const values = statsStore.trends.map((d) => d.completed);
+  const max = Math.max(...values, 1);
+  return `${Math.max((count / max) * 80, 4)}px`;
+}
+</script>
+
 <template>
   <div class="page">
     <NavBar title="统计" />
@@ -49,43 +82,9 @@
         </div>
       </div>
     </div>
-    <TabBar />
+    
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useStatisticsStore } from '@/stores/statistics.js';
-import NavBar from '@/components/NavBar.vue';
-import TabBar from '@/components/TabBar.vue';
-import EmptyState from '@/components/EmptyState.vue';
-
-const statsStore = useStatisticsStore();
-const days = ref(7);
-
-onMounted(() => {
-  loadData();
-});
-
-async function loadData() {
-  await Promise.all([
-    statsStore.fetchDashboard(),
-    statsStore.fetchTrends(days.value),
-    statsStore.fetchOverdue(),
-  ]);
-}
-
-async function switchDays(n: number) {
-  days.value = n;
-  await statsStore.fetchTrends(n);
-}
-
-function getBarHeight(count: number): string {
-  const values = statsStore.trends.map((d) => d.completed);
-  const max = Math.max(...values, 1);
-  return `${Math.max((count / max) * 80, 4)}px`;
-}
-</script>
 
 <style scoped>
 .page { min-height: 100vh; background: var(--color-bg); padding-bottom: 50px; }

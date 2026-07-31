@@ -30,7 +30,7 @@ export class AuthService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException('该邮箱已被注册');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -57,12 +57,12 @@ export class AuthService {
       .limit(1);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('邮箱或密码错误');
     }
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('邮箱或密码错误');
     }
 
     const tokens = await this.generateTokens(user.id, user.email);
@@ -84,12 +84,12 @@ export class AuthService {
         .limit(1);
 
       if (!user) {
-        throw new UnauthorizedException('User not found');
+        throw new UnauthorizedException('用户不存在');
       }
 
       return this.generateTokens(user.id, user.email);
     } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException('登录已过期，请重新登录');
     }
   }
 

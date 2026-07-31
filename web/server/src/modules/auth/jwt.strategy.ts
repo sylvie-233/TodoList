@@ -28,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       .limit(1);
 
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('认证失败，请重新登录');
     }
 
     return { id: user.id, email: user.email };

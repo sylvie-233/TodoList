@@ -1,6 +1,37 @@
+<script setup lang="ts">
+import { reactive, ref } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { showToast } from 'vant';
+import { useAuthStore } from '@/stores/auth.js';
+import { rules } from '@/utils/validation.js';
+import NavBar from '@/components/NavBar.vue';
+
+const authStore = useAuthStore();
+const router = useRouter();
+const route = useRoute();
+const loading = ref(false);
+
+const form = reactive({ username: '', email: '', password: '' });
+const confirmPassword = ref('');
+
+async function handleRegister() {
+  loading.value = true;
+  try {
+    await authStore.register(form);
+    showToast('注册成功');
+    router.push((route.query.redirect as string) || '/tasks');
+  } catch (err: unknown) {
+    const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+    showToast(msg || '注册失败，请重试');
+  } finally {
+    loading.value = false;
+  }
+}
+</script>
+
 <template>
   <div class="auth-page">
-    <NavBar title="注册" />
+    <NavBar title="注册" show-back />
     <van-form @submit="handleRegister" style="margin-top: 12px">
       <van-cell-group inset>
         <van-field
@@ -39,34 +70,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { showToast } from 'vant';
-import { useAuthStore } from '@/stores/auth.js';
-import { rules } from '@/utils/validation.js';
-import NavBar from '@/components/NavBar.vue';
-
-const authStore = useAuthStore();
-const router = useRouter();
-const loading = ref(false);
-
-const form = reactive({ username: '', email: '', password: '' });
-const confirmPassword = ref('');
-
-async function handleRegister() {
-  loading.value = true;
-  try {
-    await authStore.register(form);
-    router.push('/tasks');
-  } catch {
-    showToast('注册失败，请重试');
-  } finally {
-    loading.value = false;
-  }
-}
-</script>
 
 <style scoped>
 .auth-page { min-height: 100vh; background: var(--color-bg); }

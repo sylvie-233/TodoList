@@ -1,45 +1,10 @@
-<template>
-  <div class="page">
-    <NavBar title="今日任务" />
-    <div class="header-date">{{ todayLabel }}</div>
-    <div class="content">
-      <van-pull-refresh v-model="refreshing" @refresh="loadData">
-        <div v-if="overdueTasks.length" class="section">
-          <h3 class="section-title">已逾期 ({{ overdueTasks.length }})</h3>
-          <TaskCard v-for="task in overdueTasks" :key="task.id" :task="task" @toggle="handleToggle" @delete="handleDelete" />
-        </div>
-        <div class="section">
-          <h3 class="section-title">今天 ({{ todayTasks.length }})</h3>
-          <TaskCard v-for="task in todayTasks" :key="task.id" :task="task" @toggle="handleToggle" @delete="handleDelete" />
-        </div>
-      </van-pull-refresh>
-      <EmptyState
-        v-if="!refreshing && taskStore.tasks.length === 0"
-        title="今天没有任务"
-        description="享受你的一天！"
-      />
-    </div>
-    <div class="fab-wrapper">
-      <van-button type="primary" round icon="plus" size="large" @click="showCreate = true" />
-    </div>
-    <van-popup v-model:show="showCreate" position="bottom" round :style="{ height: '80%' }">
-      <div class="popup-header">
-        <span>新建任务</span>
-        <van-icon name="cross" size="20" @click="showCreate = false" />
-      </div>
-      <TaskForm :loading="creating" @submit="handleCreate" />
-    </van-popup>
-    <TabBar />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { showToast } from 'vant';
 import dayjs from 'dayjs';
 import { useTaskStore } from '@/stores/task.js';
 import { taskApi } from '@/api/index.js';
 import NavBar from '@/components/NavBar.vue';
-import TabBar from '@/components/TabBar.vue';
 import TaskCard from '@/components/TaskCard.vue';
 import TaskForm from '@/components/TaskForm.vue';
 import EmptyState from '@/components/EmptyState.vue';
@@ -71,19 +36,55 @@ async function loadData() {
   refreshing.value = false;
 }
 
-function handleToggle(id: string) { taskStore.toggleTask(id); }
-function handleDelete(id: string) { taskStore.deleteTask(id); }
+function handleToggle(id: string) { taskStore.toggleTask(id); showToast('状态已更新'); }
+function handleDelete(id: string) { taskStore.deleteTask(id); showToast('已移入回收站'); }
 
 async function handleCreate(dto: CreateTaskDto | UpdateTaskDto) {
   creating.value = true;
   try {
     await taskStore.createTask({ ...(dto as CreateTaskDto), dueDate: dayjs().format('YYYY-MM-DD') });
+    showToast('任务已创建');
     showCreate.value = false;
   } finally { creating.value = false; }
 }
 
 loadData();
 </script>
+
+<template>
+  <div class="page">
+    <NavBar title="今日任务" show-back />
+    <div class="header-date">{{ todayLabel }}</div>
+    <div class="content">
+      <van-pull-refresh v-model="refreshing" @refresh="loadData">
+        <div v-if="overdueTasks.length" class="section">
+          <h3 class="section-title">已逾期 ({{ overdueTasks.length }})</h3>
+          <TaskCard v-for="task in overdueTasks" :key="task.id" :task="task" @toggle="handleToggle" @delete="handleDelete" />
+        </div>
+        <div class="section">
+          <h3 class="section-title">今天 ({{ todayTasks.length }})</h3>
+          <TaskCard v-for="task in todayTasks" :key="task.id" :task="task" @toggle="handleToggle" @delete="handleDelete" />
+        </div>
+      </van-pull-refresh>
+      <EmptyState
+        v-if="!refreshing && taskStore.tasks.length === 0"
+        title="今天没有任务"
+        description="享受你的一天！"
+      />
+    </div>
+    <div class="fab-wrapper">
+      <van-button type="primary" round icon="plus" @click="showCreate = true" />
+    </div>
+    <van-popup v-model:show="showCreate" position="bottom" round :style="{ height: '80%' }">
+      <div class="popup-header">
+        <span>新建任务</span>
+        <van-icon name="cross" size="20" @click="showCreate = false" />
+      </div>
+      <TaskForm :loading="creating" @submit="handleCreate" />
+    </van-popup>
+    
+  </div>
+</template>
 
 <style scoped>
 .page { min-height: 100vh; background: var(--color-bg); padding-bottom: 50px; }
@@ -92,5 +93,6 @@ loadData();
 .section { margin-bottom: 16px; }
 .section-title { padding: 8px 16px; font-size: var(--font-size-sm); color: var(--color-text-secondary); font-weight: 600; }
 .fab-wrapper { position: fixed; bottom: 70px; right: 20px; z-index: 100; }
+.fab-wrapper :deep(.van-button) { width: 48px; height: 48px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
 .popup-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; font-size: var(--font-size-lg); font-weight: 600; }
 </style>

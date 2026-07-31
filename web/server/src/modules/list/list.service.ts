@@ -28,7 +28,7 @@ export class ListService {
       .from(lists)
       .where(and(eq(lists.userId, userId), eq(lists.name, dto.name)))
       .limit(1);
-    if (existing.length > 0) throw new ConflictException('List name already exists');
+    if (existing.length > 0) throw new ConflictException('清单名称已存在');
 
     const [list] = await this.db
       .insert(lists)
@@ -43,7 +43,7 @@ export class ListService {
       .from(lists)
       .where(and(eq(lists.id, listId), eq(lists.userId, userId)))
       .limit(1);
-    if (!list) throw new NotFoundException('List not found');
+    if (!list) throw new NotFoundException('清单不存在');
     return list;
   }
 
@@ -59,7 +59,7 @@ export class ListService {
 
   async remove(userId: string, listId: string) {
     const list = await this.findOne(userId, listId);
-    if (list.isBuiltin) throw new ForbiddenException('Cannot delete built-in list');
+    if (list.isBuiltin) throw new ForbiddenException('内置清单不可删除');
 
     await this.db
       .update(tasks)

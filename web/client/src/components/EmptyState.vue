@@ -1,3 +1,13 @@
+<script setup lang="ts">
+defineProps<{
+  icon?: string;
+  title: string;
+  description?: string;
+  actionText?: string;
+}>();
+defineEmits<{ action: [] }>();
+</script>
+
 <template>
   <div class="empty-state">
     <van-icon :name="icon || 'notes-o'" size="64" color="#dcdcdc" />
@@ -8,16 +18,6 @@
     </van-button>
   </div>
 </template>
-
-<script setup lang="ts">
-defineProps<{
-  icon?: string;
-  title: string;
-  description?: string;
-  actionText?: string;
-}>();
-defineEmits<{ action: [] }>();
-</script>
 
 <style scoped>
 .empty-state {

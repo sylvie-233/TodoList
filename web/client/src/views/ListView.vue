@@ -1,3 +1,35 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { showConfirmDialog, showToast } from 'vant';
+import { useListStore } from '@/stores/list.js';
+import NavBar from '@/components/NavBar.vue';
+import EmptyState from '@/components/EmptyState.vue';
+
+const listStore = useListStore();
+const showCreate = ref(false);
+const newName = ref('');
+
+onMounted(() => listStore.fetchLists());
+
+async function handleCreate() {
+  if (!newName.value.trim()) return;
+  await listStore.createList({ name: newName.value.trim() });
+  showToast('清单已创建');
+  newName.value = '';
+}
+
+async function handleDelete(id: string) {
+  await showConfirmDialog({
+    title: '删除清单',
+    message: '清单下的任务不会被删除，仅取消关联',
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+  });
+  await listStore.deleteList(id);
+  showToast('清单已删除');
+}
+</script>
+
 <template>
   <div class="page">
     <NavBar title="清单管理" />
@@ -22,40 +54,9 @@
     <van-dialog v-model:show="showCreate" title="新建清单" show-cancel-button @confirm="handleCreate">
       <van-field v-model="newName" placeholder="清单名称" style="margin: 16px 0" />
     </van-dialog>
-    <TabBar />
+    
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { showConfirmDialog } from 'vant';
-import { useListStore } from '@/stores/list.js';
-import NavBar from '@/components/NavBar.vue';
-import TabBar from '@/components/TabBar.vue';
-import EmptyState from '@/components/EmptyState.vue';
-
-const listStore = useListStore();
-const showCreate = ref(false);
-const newName = ref('');
-
-onMounted(() => listStore.fetchLists());
-
-async function handleCreate() {
-  if (!newName.value.trim()) return;
-  await listStore.createList({ name: newName.value.trim() });
-  newName.value = '';
-}
-
-async function handleDelete(id: string) {
-  await showConfirmDialog({
-    title: '删除清单',
-    message: '清单下的任务不会被删除，仅取消关联',
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-  });
-  await listStore.deleteList(id);
-}
-</script>
 
 <style scoped>
 .page { min-height: 100vh; background: var(--color-bg); padding-bottom: 50px; }

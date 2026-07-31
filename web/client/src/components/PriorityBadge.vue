@@ -1,9 +1,3 @@
-<template>
-  <span v-if="priority !== 'none'" class="priority-badge" :style="{ color: colorMap[priority], borderColor: colorMap[priority] }">
-    {{ labelMap[priority] }}
-  </span>
-</template>
-
 <script setup lang="ts">
 import { Priority } from '@todolist/shared';
 
@@ -25,6 +19,12 @@ const labelMap: Record<string, string> = {
   [Priority.NONE]: '',
 };
 </script>
+
+<template>
+  <span v-if="priority !== 'none'" class="priority-badge" :style="{ color: colorMap[priority], borderColor: colorMap[priority] }">
+    {{ labelMap[priority] }}
+  </span>
+</template>
 
 <style scoped>
 .priority-badge {

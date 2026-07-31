@@ -1,26 +1,10 @@
-<template>
-  <div class="page">
-    <NavBar title="计划任务" />
-    <div class="content">
-      <van-pull-refresh v-model="refreshing" @refresh="loadData">
-        <div v-for="group in grouped" :key="group.label" class="section">
-          <h3 class="section-title">{{ group.label }} ({{ group.tasks.length }})</h3>
-          <TaskCard v-for="task in group.tasks" :key="task.id" :task="task" @toggle="handleToggle" @delete="handleDelete" />
-        </div>
-      </van-pull-refresh>
-      <EmptyState v-if="!refreshing && taskStore.tasks.length === 0" title="暂无计划任务" description="设置了截止日期的任务会出现在这里" />
-    </div>
-    <TabBar />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import dayjs from 'dayjs';
+import { showToast } from 'vant';
 import { useTaskStore } from '@/stores/task.js';
 import { taskApi } from '@/api/index.js';
 import NavBar from '@/components/NavBar.vue';
-import TabBar from '@/components/TabBar.vue';
 import TaskCard from '@/components/TaskCard.vue';
 import EmptyState from '@/components/EmptyState.vue';
 
@@ -61,11 +45,27 @@ async function loadData() {
   refreshing.value = false;
 }
 
-function handleToggle(id: string) { taskStore.toggleTask(id); }
-function handleDelete(id: string) { taskStore.deleteTask(id); }
+function handleToggle(id: string) { taskStore.toggleTask(id); showToast('状态已更新'); }
+function handleDelete(id: string) { taskStore.deleteTask(id); showToast('已移入回收站'); }
 
 loadData();
 </script>
+
+<template>
+  <div class="page">
+    <NavBar title="计划任务" show-back />
+    <div class="content">
+      <van-pull-refresh v-model="refreshing" @refresh="loadData">
+        <div v-for="group in grouped" :key="group.label" class="section">
+          <h3 class="section-title">{{ group.label }} ({{ group.tasks.length }})</h3>
+          <TaskCard v-for="task in group.tasks" :key="task.id" :task="task" @toggle="handleToggle" @delete="handleDelete" />
+        </div>
+      </van-pull-refresh>
+      <EmptyState v-if="!refreshing && taskStore.tasks.length === 0" title="暂无计划任务" description="设置了截止日期的任务会出现在这里" />
+    </div>
+    
+  </div>
+</template>
 
 <style scoped>
 .page { min-height: 100vh; background: var(--color-bg); padding-bottom: 50px; }

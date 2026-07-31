@@ -1,6 +1,39 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useSearchStore } from '@/stores/search.js';
+import { useTaskStore } from '@/stores/task.js';
+import NavBar from '@/components/NavBar.vue';
+import TaskCard from '@/components/TaskCard.vue';
+import EmptyState from '@/components/EmptyState.vue';
+
+const searchStore = useSearchStore();
+const taskStore = useTaskStore();
+const keyword = ref('');
+const didSearch = ref(false);
+let debounceTimer: ReturnType<typeof setTimeout>;
+
+onMounted(() => searchStore.fetchHistory());
+
+function doSearch() {
+  if (!keyword.value.trim()) return;
+  didSearch.value = true;
+  searchStore.search({ keyword: keyword.value });
+}
+
+function onInput() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    if (keyword.value.trim()) doSearch();
+  }, 400);
+}
+
+function handleToggle(id: string) { taskStore.toggleTask(id); }
+function handleDelete(id: string) { taskStore.deleteTask(id); }
+</script>
+
 <template>
   <div class="page">
-    <NavBar title="搜索" />
+    <NavBar title="搜索" show-back />
     <van-search
       v-model="keyword"
       placeholder="搜索任务标题或描述..."
@@ -37,43 +70,9 @@
         <EmptyState v-if="searchStore.results.length === 0" title="没有找到结果" :description="'未搜索到与「' + keyword + '」相关的任务'" />
       </div>
     </div>
-    <TabBar />
+    
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useSearchStore } from '@/stores/search.js';
-import { useTaskStore } from '@/stores/task.js';
-import NavBar from '@/components/NavBar.vue';
-import TabBar from '@/components/TabBar.vue';
-import TaskCard from '@/components/TaskCard.vue';
-import EmptyState from '@/components/EmptyState.vue';
-
-const searchStore = useSearchStore();
-const taskStore = useTaskStore();
-const keyword = ref('');
-const didSearch = ref(false);
-let debounceTimer: ReturnType<typeof setTimeout>;
-
-onMounted(() => searchStore.fetchHistory());
-
-function doSearch() {
-  if (!keyword.value.trim()) return;
-  didSearch.value = true;
-  searchStore.search({ keyword: keyword.value });
-}
-
-function onInput() {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    if (keyword.value.trim()) doSearch();
-  }, 400);
-}
-
-function handleToggle(id: string) { taskStore.toggleTask(id); }
-function handleDelete(id: string) { taskStore.deleteTask(id); }
-</script>
 
 <style scoped>
 .page { min-height: 100vh; background: var(--color-bg); padding-bottom: 50px; }

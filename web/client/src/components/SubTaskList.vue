@@ -1,21 +1,3 @@
-<template>
-  <div class="subtask-list">
-    <div v-for="st in subTasks" :key="st.id" class="subtask-item">
-      <van-checkbox :model-value="st.isCompleted" @change="$emit('toggle', st.id)" />
-      <span class="subtask-text" :class="{ done: st.isCompleted }">{{ st.text }}</span>
-      <van-icon name="delete-o" size="16" color="#ccc" @click="$emit('delete', st.id)" />
-    </div>
-    <div class="subtask-add">
-      <van-field
-        v-model="newText"
-        placeholder="添加步骤..."
-        @keyup.enter="handleAdd"
-      />
-      <van-button size="small" type="primary" :disabled="!newText.trim()" @click="handleAdd">添加</van-button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { SubTaskInfo } from '@todolist/shared';
@@ -35,6 +17,24 @@ function handleAdd() {
   newText.value = '';
 }
 </script>
+
+<template>
+  <div class="subtask-list">
+    <div v-for="st in subTasks" :key="st.id" class="subtask-item">
+      <van-checkbox :model-value="st.isCompleted" @change="$emit('toggle', st.id)" />
+      <span class="subtask-text" :class="{ done: st.isCompleted }">{{ st.text }}</span>
+      <van-icon name="delete-o" size="16" color="#ccc" @click="$emit('delete', st.id)" />
+    </div>
+    <div class="subtask-add">
+      <van-field
+        v-model="newText"
+        placeholder="添加步骤..."
+        @keyup.enter="handleAdd"
+      />
+      <van-button size="small" type="primary" :disabled="!newText.trim()" @click="handleAdd">添加</van-button>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .subtask-list { background: var(--color-bg-card); }

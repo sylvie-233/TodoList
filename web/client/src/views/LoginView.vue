@@ -1,3 +1,32 @@
+<script setup lang="ts">
+import { reactive, ref } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { showToast } from 'vant';
+import { useAuthStore } from '@/stores/auth.js';
+import { rules } from '@/utils/validation.js';
+
+const authStore = useAuthStore();
+const router = useRouter();
+const route = useRoute();
+const loading = ref(false);
+
+const form = reactive({ email: '', password: '' });
+
+async function handleLogin() {
+  loading.value = true;
+  try {
+    await authStore.login(form);
+    showToast('登录成功');
+    router.push((route.query.redirect as string) || '/tasks');
+  } catch (err: unknown) {
+    const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+    showToast(msg || '登录失败，请检查邮箱和密码');
+  } finally {
+    loading.value = false;
+  }
+}
+</script>
+
 <template>
   <div class="auth-page">
     <div class="auth-header">
@@ -29,32 +58,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { showToast } from 'vant';
-import { useAuthStore } from '@/stores/auth.js';
-import { rules } from '@/utils/validation.js';
-
-const authStore = useAuthStore();
-const router = useRouter();
-const loading = ref(false);
-
-const form = reactive({ email: '', password: '' });
-
-async function handleLogin() {
-  loading.value = true;
-  try {
-    await authStore.login(form);
-    router.push('/tasks');
-  } catch {
-    showToast('登录失败，请检查邮箱和密码');
-  } finally {
-    loading.value = false;
-  }
-}
-</script>
 
 <style scoped>
 .auth-page { min-height: 100vh; background: var(--color-bg); padding-top: 60px; }

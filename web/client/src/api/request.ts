@@ -37,6 +37,9 @@ function flushRefreshQueue(token: string | null, error: unknown) {
   refreshQueue = [];
 }
 
+// 无需 token 刷新的公开接口（它们的 401 表示"认证失败"而非"token 过期"）
+const PUBLIC_AUTH_URLS = ['/auth/login', '/auth/register', '/auth/refresh'];
+
 // —— 响应拦截：统一错误处理 + 静默刷新 ——
 request.interceptors.response.use(
   (response) => response,
@@ -49,8 +52,10 @@ request.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 401 且不是刷新请求本身 → 尝试刷新 token
-    if (response.status === 401 && !config._isRefresh && !config.url?.includes('/auth/refresh')) {
+    const isPublicAuth = PUBLIC_AUTH_URLS.some((url) => config.url?.includes(url));
+
+    // 401 处理：公开接口 → 直接抛错让调用方处理；受保护接口 → 尝试刷新 token
+    if (response.status === 401 && !isPublicAuth) {
       if (!isRefreshing) {
         isRefreshing = true;
         try {
@@ -81,7 +86,6 @@ request.interceptors.response.use(
           return Promise.reject(error);
         }
       } else {
-        // 其他请求等待刷新完成
         try {
           const token = await addRefreshQueue();
           config.headers.Authorization = `Bearer ${token}`;
@@ -90,6 +94,11 @@ request.interceptors.response.use(
           return Promise.reject(error);
         }
       }
+    }
+
+    // 公开接口的错误 → 只透传，由调用方自己展示 toast
+    if (isPublicAuth) {
+      return Promise.reject(error);
     }
 
     // 其他错误 → Toast 提示

@@ -77,7 +77,7 @@ export class SubTaskService {
       .from(tasks)
       .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
       .limit(1);
-    if (!task) throw new NotFoundException('Task not found');
+    if (!task) throw new NotFoundException('任务不存在');
     return task;
   }
 
@@ -87,7 +87,7 @@ export class SubTaskService {
       .from(subTasks)
       .where(eq(subTasks.id, subTaskId))
       .limit(1);
-    if (!subTask) throw new NotFoundException('Sub-task not found');
+    if (!subTask) throw new NotFoundException('子任务不存在');
     return subTask;
   }
 }

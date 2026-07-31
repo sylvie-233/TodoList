@@ -1,68 +1,3 @@
-<template>
-  <div class="page">
-    <NavBar title="任务详情">
-      <template #right>
-        <van-icon name="ellipsis" size="20" @click="showActions = true" />
-      </template>
-    </NavBar>
-    <div class="content" v-if="taskStore.currentTask">
-      <div class="detail-card">
-        <h2 class="detail-title">{{ taskStore.currentTask.title }}</h2>
-        <p v-if="taskStore.currentTask.description" class="detail-desc">{{ taskStore.currentTask.description }}</p>
-        <div class="detail-meta">
-          <div v-if="taskStore.currentTask.priority !== 'none'" class="meta-item">
-            <PriorityBadge :priority="taskStore.currentTask.priority" />
-          </div>
-          <div v-if="taskStore.currentTask.dueDate" class="meta-item">
-            📅 {{ taskStore.currentTask.dueDate }}
-            <span v-if="taskStore.currentTask.dueTime">{{ taskStore.currentTask.dueTime }}</span>
-          </div>
-          <div v-if="taskStore.currentTask.list" class="meta-item">
-            📋 {{ taskStore.currentTask.list.name }}
-          </div>
-        </div>
-        <div v-if="taskStore.currentTask.tags?.length" class="tag-row">
-          <TagChip v-for="tag in taskStore.currentTask.tags" :key="tag.id" :name="tag.name" :color="tag.color" />
-        </div>
-      </div>
-
-      <div class="subtask-section">
-        <h3>子任务</h3>
-        <SubTaskList
-          :sub-tasks="taskStore.currentTask.subTasks ?? []"
-          @toggle="handleSubToggle"
-          @delete="handleSubDelete"
-          @add="handleSubAdd"
-        />
-      </div>
-    </div>
-
-    <div class="bottom-bar">
-      <van-button
-        type="default"
-        size="small"
-        @click="handleToggle"
-      >
-        {{ taskStore.currentTask?.isCompleted ? '撤销' : '完成' }}
-      </van-button>
-      <van-button
-        type="primary"
-        size="small"
-        @click="$router.push(`/tasks/${taskStore.currentTask?.id}/edit`)"
-      >
-        编辑
-      </van-button>
-    </div>
-
-    <van-action-sheet
-      v-model:show="showActions"
-      :actions="actions"
-      @select="onActionSelect"
-    />
-    <TabBar />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -70,7 +5,6 @@ import { showConfirmDialog, showToast } from 'vant';
 import { useTaskStore } from '@/stores/task.js';
 import { useSubTaskStore } from '@/stores/sub-task.js';
 import NavBar from '@/components/NavBar.vue';
-import TabBar from '@/components/TabBar.vue';
 import PriorityBadge from '@/components/PriorityBadge.vue';
 import TagChip from '@/components/TagChip.vue';
 import SubTaskList from '@/components/SubTaskList.vue';
@@ -92,7 +26,10 @@ onMounted(() => {
 });
 
 function handleToggle() {
-  if (taskStore.currentTask) taskStore.toggleTask(taskStore.currentTask.id);
+  if (taskStore.currentTask) {
+    taskStore.toggleTask(taskStore.currentTask.id);
+    showToast('状态已更新');
+  }
 }
 
 async function onActionSelect(action: { value: string }) {
@@ -100,7 +37,7 @@ async function onActionSelect(action: { value: string }) {
   if (action.value === 'copy') {
     if (taskStore.currentTask) {
       await taskStore.copyTask(taskStore.currentTask.id);
-      showToast('已复制');
+      showToast('任务已复制');
     }
   } else if (action.value === 'delete') {
     await showConfirmDialog({
@@ -111,6 +48,7 @@ async function onActionSelect(action: { value: string }) {
     });
     if (taskStore.currentTask) {
       await taskStore.deleteTask(taskStore.currentTask.id);
+      showToast('已移入回收站');
       router.back();
     }
   }
@@ -118,6 +56,7 @@ async function onActionSelect(action: { value: string }) {
 
 function handleSubToggle(id: string) {
   subTaskStore.toggleSubTask(id);
+  showToast('步骤已更新');
   // 同步更新 currentTask
   if (taskStore.currentTask?.subTasks) {
     const st = taskStore.currentTask.subTasks.find((s) => s.id === id);
@@ -128,6 +67,7 @@ function handleSubToggle(id: string) {
 
 function handleSubDelete(id: string) {
   subTaskStore.deleteSubTask(id);
+  showToast('步骤已删除');
   if (taskStore.currentTask?.subTasks) {
     taskStore.currentTask.subTasks = taskStore.currentTask.subTasks.filter((s) => s.id !== id);
     taskStore.currentTask = { ...taskStore.currentTask };
@@ -137,11 +77,46 @@ function handleSubDelete(id: string) {
 async function handleSubAdd(text: string) {
   if (!taskStore.currentTask) return;
   const st = await subTaskStore.createSubTask({ taskId: taskStore.currentTask.id, text });
+  showToast('步骤已添加');
   const updated = { ...taskStore.currentTask };
   updated.subTasks = [...(updated.subTasks ?? []), { id: st.id, text: st.text, isCompleted: st.isCompleted, sortOrder: st.sortOrder }];
   taskStore.currentTask = updated;
 }
 </script>
+
+<template>
+  <div class="page">
+    <NavBar title="任务详情" show-back>
+      <template #right>
+        <van-icon name="ellipsis" size="20" @click="showActions = true" />
+      </template>
+    </NavBar>
+    <div class="content" v-if="taskStore.currentTask">
+      <div class="detail-card">
+        <h2 class="detail-title">{{ taskStore.currentTask.title }}</h2>
+        <p v-if="taskStore.currentTask.description" class="detail-desc">{{ taskStore.currentTask.description }}</p>
+        <div class="detail-meta">
+          <div v-if="taskStore.currentTask.priority !== 'none'" class="meta-item"><PriorityBadge :priority="taskStore.currentTask.priority" /></div>
+          <div v-if="taskStore.currentTask.dueDate" class="meta-item">📅 {{ taskStore.currentTask.dueDate }}<span v-if="taskStore.currentTask.dueTime"> {{ taskStore.currentTask.dueTime }}</span></div>
+          <div v-if="taskStore.currentTask.list" class="meta-item">📋 {{ taskStore.currentTask.list.name }}</div>
+        </div>
+        <div v-if="taskStore.currentTask.tags?.length" class="tag-row">
+          <TagChip v-for="tag in taskStore.currentTask.tags" :key="tag.id" :name="tag.name" :color="tag.color" />
+        </div>
+      </div>
+      <div class="subtask-section">
+        <h3>子任务</h3>
+        <SubTaskList :sub-tasks="taskStore.currentTask.subTasks ?? []" @toggle="handleSubToggle" @delete="handleSubDelete" @add="handleSubAdd" />
+      </div>
+    </div>
+    <div class="bottom-bar">
+      <van-button type="default" size="small" @click="handleToggle">{{ taskStore.currentTask?.isCompleted ? '撤销' : '完成' }}</van-button>
+      <van-button type="primary" size="small" @click="$router.push(`/tasks/${taskStore.currentTask?.id}/edit`)">编辑</van-button>
+    </div>
+    <van-action-sheet v-model:show="showActions" :actions="actions" @select="onActionSelect" />
+    
+  </div>
+</template>
 
 <style scoped>
 .page { min-height: 100vh; background: var(--color-bg); padding-bottom: 80px; }

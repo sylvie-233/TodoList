@@ -13,7 +13,7 @@ export class UserService {
 
   async getProfile(userId: string) {
     const [user] = await this.db.select().from(users).where(eq(users.id, userId)).limit(1);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException('用户不存在');
     const { passwordHash: _, ...safeUser } = user;
     return safeUser;
   }
@@ -24,17 +24,17 @@ export class UserService {
       .set({ ...dto, updatedAt: new Date() })
       .where(eq(users.id, userId))
       .returning();
-    if (!updated) throw new NotFoundException('User not found');
+    if (!updated) throw new NotFoundException('用户不存在');
     const { passwordHash: _, ...safeUser } = updated;
     return safeUser;
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
     const [user] = await this.db.select().from(users).where(eq(users.id, userId)).limit(1);
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) throw new NotFoundException('用户不存在');
 
     const valid = await bcrypt.compare(dto.oldPassword, user.passwordHash);
-    if (!valid) throw new BadRequestException('Old password is incorrect');
+    if (!valid) throw new BadRequestException('旧密码错误');
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 10);
     await this.db

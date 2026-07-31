@@ -1,37 +1,10 @@
-<template>
-  <div class="page">
-    <NavBar title="回收站">
-      <template #right>
-        <van-button size="small" type="danger" plain @click="handleEmptyAll">清空</van-button>
-      </template>
-    </NavBar>
-    <div class="content">
-      <van-list v-model:loading="loading" :finished="finished" finished-text="没有更多了" @load="onLoad">
-        <van-swipe-cell v-for="task in taskStore.tasks" :key="task.id">
-          <div class="bin-card">
-            <span class="bin-title">{{ task.title }}</span>
-            <span class="bin-date">已删除于 {{ formatDateTime(task.deletedAt) }}</span>
-          </div>
-          <template #right>
-            <van-button square type="success" text="恢复" @click="handleRestore(task.id)" />
-            <van-button square type="danger" text="删除" @click="handlePermanent(task.id)" />
-          </template>
-        </van-swipe-cell>
-      </van-list>
-      <EmptyState v-if="!loading && taskStore.tasks.length === 0" title="回收站是空的" />
-    </div>
-    <TabBar />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref } from 'vue';
-import { showConfirmDialog } from 'vant';
+import { showConfirmDialog, showToast } from 'vant';
 import { useTaskStore } from '@/stores/task.js';
 import { taskApi } from '@/api/index.js';
 import { formatDateTime } from '@/utils/date.js';
 import NavBar from '@/components/NavBar.vue';
-import TabBar from '@/components/TabBar.vue';
 import EmptyState from '@/components/EmptyState.vue';
 
 const taskStore = useTaskStore();
@@ -56,6 +29,7 @@ async function onLoad() {
 
 async function handleRestore(id: string) {
   await taskStore.restoreTask(id);
+  showToast('任务已恢复');
 }
 
 async function handlePermanent(id: string) {
@@ -66,6 +40,7 @@ async function handlePermanent(id: string) {
     cancelButtonText: '取消',
   });
   await taskStore.permanentDeleteTask(id);
+  showToast('任务已永久删除');
 }
 
 async function handleEmptyAll() {
@@ -82,6 +57,32 @@ async function handleEmptyAll() {
   finished.value = true;
 }
 </script>
+
+<template>
+  <div class="page">
+    <NavBar title="回收站" show-back>
+      <template #right>
+        <van-button size="small" type="danger" plain @click="handleEmptyAll">清空</van-button>
+      </template>
+    </NavBar>
+    <div class="content">
+      <van-list v-model:loading="loading" :finished="finished" finished-text="没有更多了" @load="onLoad">
+        <van-swipe-cell v-for="task in taskStore.tasks" :key="task.id">
+          <div class="bin-card">
+            <span class="bin-title">{{ task.title }}</span>
+            <span class="bin-date">已删除于 {{ formatDateTime(task.deletedAt) }}</span>
+          </div>
+          <template #right>
+            <van-button square type="success" text="恢复" @click="handleRestore(task.id)" />
+            <van-button square type="danger" text="删除" @click="handlePermanent(task.id)" />
+          </template>
+        </van-swipe-cell>
+      </van-list>
+      <EmptyState v-if="!loading && taskStore.tasks.length === 0" title="回收站是空的" />
+    </div>
+    
+  </div>
+</template>
 
 <style scoped>
 .page { min-height: 100vh; background: var(--color-bg); padding-bottom: 50px; }

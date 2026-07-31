@@ -25,7 +25,7 @@ export class TagService {
       .from(tags)
       .where(and(eq(tags.userId, userId), eq(tags.name, dto.name)))
       .limit(1);
-    if (existing.length > 0) throw new ConflictException('Tag name already exists');
+    if (existing.length > 0) throw new ConflictException('标签名称已存在');
 
     const [tag] = await this.db
       .insert(tags)
@@ -40,7 +40,7 @@ export class TagService {
       .from(tags)
       .where(and(eq(tags.id, tagId), eq(tags.userId, userId)))
       .limit(1);
-    if (!tag) throw new NotFoundException('Tag not found');
+    if (!tag) throw new NotFoundException('标签不存在');
 
     const [updated] = await this.db
       .update(tags)
@@ -56,7 +56,7 @@ export class TagService {
       .from(tags)
       .where(and(eq(tags.id, tagId), eq(tags.userId, userId)))
       .limit(1);
-    if (!tag) throw new NotFoundException('Tag not found');
+    if (!tag) throw new NotFoundException('标签不存在');
 
     await this.db.delete(taskTags).where(eq(taskTags.tagId, tagId));
     await this.db.delete(tags).where(and(eq(tags.id, tagId), eq(tags.userId, userId)));
