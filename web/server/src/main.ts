@@ -20,11 +20,11 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
+    new ValidationPipe({ // 全局参数类型转换
+      whitelist: true, // 剔除未声明字段
+      forbidNonWhitelisted: true, // 丢弃的同时报错
+      transform: true, // 字符串自动转类型
+      transformOptions: { enableImplicitConversion: true }, // 允许隐式转换
     }),
   );
 

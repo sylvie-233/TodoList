@@ -44,3 +44,61 @@ TodoList：
     - 恢复待办、永久删除
 10. 用户模块
     - 用户登录、注册
+
+
+
+
+
+
+
+## server
+```yaml
+server:
+    src/:
+        common: # 公共目录
+            decorators: # 装饰器
+                currrent-usser.decorator.ts: # 当前用户
+                public.decorator.ts: 
+            filters: # 异常过滤器
+                http-exception.filter.ts: # HTTP异常过滤器
+            interceptors: # 拦截器
+                logging.interceptor.ts: # 日志拦截器
+                transform.interceptor.ts: # 响应转换拦截器
+        config: # 配置目录
+            app.config.ts: # 主应用配置
+            database.config.ts: # 数据库配置
+            logger.config.ts: # 日志配置
+        database: # 数据库目录
+            schema: # 数据库映射文件
+                enums.ts: # 枚举
+                index.ts:
+                lists.ts: # 清单
+                reminders.ts: # 提醒
+                search-history.ts: # 搜索历史
+                sub-tasks.ts: # 子任务
+                tags.ts: # 标签
+                task-images.ts: # 任务图片
+                task-tags.ts: # 任务标签中间表
+                tasks.ts: # 任务
+                users.ts: # 用户
+            database.module.ts: # 数据库模块文件
+        modules:
+            auth:
+            health:
+            list:
+            reminder:
+            search:
+            statistics:
+            sub-task:
+            tag:
+            task:
+            upload:
+            user:
+        app.module.ts: # 主模块配置文件
+        main.ts: # 入口文件
+    .env:
+    drizzle.config.ts: # drizzle数据库迁移撇脂
+    nest-cli.json: # nestjs构建配置
+    package.json:
+    tsconfig.json:
+```

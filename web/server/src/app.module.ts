@@ -24,6 +24,7 @@ import { UploadModule } from './modules/upload/upload.module.js';
 
 @Module({
   imports: [
+    // 配置文件
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '.env.local'],
