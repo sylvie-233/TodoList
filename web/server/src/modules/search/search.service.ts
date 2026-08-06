@@ -16,6 +16,7 @@ export class SearchService {
     const pageSize = query.pageSize ?? PAGE_SIZE;
     const offset = (page - 1) * pageSize;
 
+    // 动态条件拼接
     const conditions: ReturnType<typeof and>[] = [
       eq(tasks.userId, userId),
       sql`${tasks.deletedAt} IS NULL`,
@@ -116,6 +117,7 @@ export class SearchService {
 
     const listIds = [...new Set(taskRows.map((t) => t.listId).filter(Boolean))] as string[];
 
+    // 批处理查询关联数据
     const [tagRelations, listRows, subtaskCounts] = await Promise.all([
       this.db.select({ taskId: taskTags.taskId, tag: tags })
         .from(taskTags).innerJoin(tags, eq(taskTags.tagId, tags.id))
@@ -131,6 +133,7 @@ export class SearchService {
       }).from(subTasks).where(inArray(subTasks.taskId, taskIds)).groupBy(subTasks.taskId),
     ]);
 
+    // 组装map
     const tagMap = new Map<string, Array<{ id: string; name: string; color: string }>>();
     for (const { taskId, tag } of tagRelations) {
       const arr = tagMap.get(taskId) || [];

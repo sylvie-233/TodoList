@@ -83,12 +83,12 @@ server:
                 users.ts: # 用户
             database.module.ts: # 数据库模块文件
         modules:
-            auth:
-            health:
-            list:
+            auth: # 认证模块
+            health: # 健康检测模块
+            list: # 清单模块
             reminder:
-            search:
-            statistics:
+            search: # 搜索模块
+            statistics: # 统计模块
             sub-task:
             tag:
             task:
