@@ -4,6 +4,24 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val projectRoot = "${project.rootDir.absolutePath}"
+val myStoreFile = file("$projectRoot/app/upload-keystore.jks")
+val myStorePassword = "123456"
+val myKeyAlias = "upload"
+val myKeyPassword = "123456"
+
+// 调试打印
+println("=".repeat(50))
+println("🔍 签名配置调试信息:")
+println("📄 storeFile 路径: ${myStoreFile.absolutePath}")
+println("📄 storeFile 是否存在: ${myStoreFile.exists()}")
+println("🔑 storePassword: ✅ 已设置 (长度: ${myStorePassword.length})")
+println("🔑 keyAlias: ✅ 已设置 (值: $myKeyAlias)")
+println("🔑 keyPassword: ✅ 已设置 (长度: ${myKeyPassword.length})")
+println("=".repeat(50))
+
+
+
 android {
     namespace = "com.example.app"
     compileSdk = flutter.compileSdkVersion
@@ -12,6 +30,15 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = myStoreFile
+            storePassword = myStorePassword
+            keyAlias = myKeyAlias
+            keyPassword = myKeyPassword
+        }
     }
 
     defaultConfig {
@@ -27,9 +54,7 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
